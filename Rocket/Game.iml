@@ -7,6 +7,22 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../JOGLwin/JOGLwin/lib64/gluegen-rt.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../JOGLwin/JOGLwin/lib64/jogl.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <NATIVE>
+          <root url="file://$MODULE_DIR$/../../JOGLwin/JOGLwin/lib64" />
+          <root url="file://$MODULE_DIR$/../../JOGLwin/JOGLwin/lib64" />
+          <root url="file://$MODULE_DIR$/../../JOGLwin/JOGLwin/lib64" />
+          <root url="file://$MODULE_DIR$/../../JOGLwin/JOGLwin/lib64" />
+        </NATIVE>
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="library" name="lib64" level="project" />
   </component>
 </module>

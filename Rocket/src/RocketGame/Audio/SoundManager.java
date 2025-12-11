@@ -25,7 +25,6 @@ public class SoundManager {
         return instance;
     }
 
-
     public void loadSound(String name, String filepath) {
         try {
             File soundFile = new File(filepath);
@@ -39,7 +38,6 @@ public class SoundManager {
         }
     }
 
-
     public void playSound(String name) {
         if (muted) return;
 
@@ -49,7 +47,6 @@ public class SoundManager {
             clip.start();
         }
     }
-
 
     public void playTone(float frequency, int duration) {
         if (muted) return;
@@ -75,7 +72,6 @@ public class SoundManager {
         }).start();
     }
 
-
     public void playShoot() {
         playTone(800, 100);
     }
@@ -96,7 +92,6 @@ public class SoundManager {
         playTone(150, 300);
     }
 
-
     public void toggleMute() {
         muted = !muted;
     }
@@ -112,7 +107,6 @@ public class SoundManager {
     public void setVolume(float volume) {
         this.volume = Math.max(0.0f, Math.min(1.0f, volume));
     }
-
 
     public void cleanup() {
         for (Clip clip : soundClips.values()) {

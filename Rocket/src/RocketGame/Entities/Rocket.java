@@ -1,8 +1,11 @@
 package RocketGame.Entities;
 
 import javax.media.opengl.GL;
+import com.sun.opengl.util.texture.Texture;
+import com.sun.opengl.util.texture.TextureIO;
+import java.io.File;
+import java.io.IOException;
 
-import RocketGame.Entities.GameObject;
 import RocketGame.Util.Constants;
 import RocketGame.Util.Vector2D;
 
@@ -18,6 +21,9 @@ public class Rocket extends GameObject {
     private int damage;
     private long invincibleUntil;
 
+    private Texture rocketTexture;
+    private boolean textureLoaded;
+
     public Rocket(float x, float y) {
         super(x, y, Constants.ROCKET_WIDTH, Constants.ROCKET_HEIGHT);
 
@@ -31,17 +37,19 @@ public class Rocket extends GameObject {
         this.weaponType = "normal";
         this.damage = 1;
         this.invincibleUntil = 0;
+
+        this.textureLoaded = false;
+        this.rocketTexture = null;
     }
 
     @Override
     public void update(float deltaTime) {
-
+        // لا شيء مطلوب هنا للصورة
     }
 
     public void move(float dx, float dy, int screenWidth, int screenHeight) {
         position.x += dx;
         position.y += dy;
-
 
         if (position.x < 0) position.x = 0;
         if (position.x > screenWidth - width) position.x = screenWidth - width;
@@ -83,17 +91,41 @@ public class Rocket extends GameObject {
         invincibleUntil = System.currentTimeMillis() + duration;
     }
 
+    public void loadTexture(GL gl) {
+        if (textureLoaded) return;
+
+        try {
+            String texturePath = "Assets/rocket.png";
+            File textureFile = new File(texturePath);
+
+            if (textureFile.exists()) {
+                rocketTexture = TextureIO.newTexture(textureFile, true);
+                rocketTexture.setTexParameteri(GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR);
+                rocketTexture.setTexParameteri(GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR);
+                textureLoaded = true;
+                System.out.println("Rocket texture loaded successfully: " + texturePath);
+            } else {
+                System.err.println("Rocket texture file not found: " + texturePath);
+                textureLoaded = false;
+            }
+        } catch (IOException e) {
+            System.err.println("Error loading rocket texture: " + e.getMessage());
+            textureLoaded = false;
+        }
+    }
+
     @Override
     public void render(GL gl) {
         gl.glPushMatrix();
         gl.glTranslatef(position.x, position.y, 0);
 
-
         drawShieldEffect(gl);
 
-        drawRocketBody(gl);
+        if (!textureLoaded) {
+            loadTexture(gl);
+        }
 
-        drawFlames(gl);
+        drawRocketWithTexture(gl);
 
         gl.glPopMatrix();
     }
@@ -102,78 +134,92 @@ public class Rocket extends GameObject {
         if (shield <= 0) return;
 
         float shieldStrength = (float) shield / maxShield;
-        float centerX = width / 2;
-        float centerY = height / 2;
 
-        long time = System.currentTimeMillis();
-        float pulse = (float) Math.sin(time / 200.0) * 3;
+        gl.glEnable(GL.GL_BLEND);
+        gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
 
-        for (int ring = 0; ring < 2; ring++) {
-            float radius = 32 + ring * 6 + pulse;
-            float brightness = shieldStrength * (1.0f - ring * 0.4f);
-
-            gl.glColor3f(0.3f * brightness, 0.7f * brightness, brightness );
-            gl.glLineWidth(2.0f);
-
-            gl.glBegin(GL.GL_LINE_LOOP);
-            for (int degrees = 0; degrees < 360; degrees += 10) {
-                double radians = Math.toRadians(degrees);
-                float x = centerX + (float) Math.cos(radians) * radius;
-                float y = centerY + (float) Math.sin(radians) * radius;
-                gl.glVertex2f(x, y);
-            }
-            gl.glEnd();
-        }
-    }
-
-    private void drawRocketBody(GL gl) {
-        if (isInvincible() && (System.currentTimeMillis() / 100) % 2 == 0) {
-            gl.glColor3f(1.0f, 1.0f, 1.0f); // White flash
-        } else {
-            gl.glColor3f(1.0f, 0.3f, 0.3f); // Red rocket
-        }
+        float glowSize = 10 * shieldStrength;
+        gl.glColor4f(0.3f, 0.7f, 1.0f, shieldStrength * 0.5f);
 
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(10, 0);
-        gl.glVertex2f(30, 0);
-        gl.glVertex2f(30, 40);
-        gl.glVertex2f(10, 40);
+        gl.glVertex2f(-glowSize, -glowSize);
+        gl.glVertex2f(width + glowSize, -glowSize);
+        gl.glVertex2f(width + glowSize, height + glowSize);
+        gl.glVertex2f(-glowSize, height + glowSize);
         gl.glEnd();
 
-        gl.glBegin(GL.GL_TRIANGLES);
-        gl.glVertex2f(20, -15);
-        gl.glVertex2f(5, 0);
-        gl.glVertex2f(35, 0);
-        gl.glEnd();
-
-        gl.glColor3f(0.3f, 0.3f, 1.0f);
-        gl.glBegin(GL.GL_TRIANGLES);
-
-        gl.glVertex2f(0, 30);
-        gl.glVertex2f(10, 20);
-        gl.glVertex2f(10, 40);
-
-        gl.glVertex2f(40, 30);
-        gl.glVertex2f(30, 20);
-        gl.glVertex2f(30, 40);
-        gl.glEnd();
+        gl.glDisable(GL.GL_BLEND);
     }
 
-    private void drawFlames(GL gl) {
-        float flameHeight = (float) (Math.random() * 10 + 15);
+    private void drawRocketWithTexture(GL gl) {
+        if (rocketTexture != null && textureLoaded) {
+            rocketTexture.bind();
+            rocketTexture.enable();
 
-        gl.glColor3f(1.0f, 0.7f, 0.0f);
+            gl.glEnable(GL.GL_TEXTURE_2D);
+            gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE);
+
+            // تأثير الوامض عندما يكون الصاروخ غير قابل للإصابة
+            if (isInvincible() && (System.currentTimeMillis() / 100) % 2 == 0) {
+                gl.glColor3f(1.0f, 1.0f, 1.0f);
+            } else {
+                gl.glColor3f(1.0f, 1.0f, 1.0f);
+            }
+
+            gl.glBegin(GL.GL_QUADS);
+
+            gl.glTexCoord2f(0.0f, 0.0f);
+            gl.glVertex2f(0, 0);
+
+            gl.glTexCoord2f(1.0f, 0.0f);
+            gl.glVertex2f(width, 0);
+
+            gl.glTexCoord2f(1.0f, 1.0f);
+            gl.glVertex2f(width, height);
+
+            gl.glTexCoord2f(0.0f, 1.0f);
+            gl.glVertex2f(0, height);
+
+            gl.glEnd();
+
+            rocketTexture.disable();
+            gl.glDisable(GL.GL_TEXTURE_2D);
+        } else {
+            // النسخة الاحتياطية إذا لم يتم تحميل الصورة
+            drawRocketBodyAsBackup(gl);
+        }
+    }
+
+    private void drawRocketBodyAsBackup(GL gl) {
+        // هذه النسخة الاحتياطية لا تستخدم المستطيل بل شكل الصاروخ القديم
+        if (isInvincible() && (System.currentTimeMillis() / 100) % 2 == 0) {
+            gl.glColor3f(1.0f, 1.0f, 1.0f);
+        } else {
+            gl.glColor3f(1.0f, 0.3f, 0.3f);
+        }
+
+        // جسم الصاروخ (مثلث)
         gl.glBegin(GL.GL_TRIANGLES);
-        gl.glVertex2f(15, 40);
-        gl.glVertex2f(12, 40 + flameHeight);
-        gl.glVertex2f(20, 40);
+        gl.glVertex2f(width / 2, 0); // قمة الصاروخ
+        gl.glVertex2f(0, height);    // الزاوية اليسرى السفلية
+        gl.glVertex2f(width, height); // الزاوية اليمنى السفلية
         gl.glEnd();
 
-        gl.glColor3f(1.0f, 0.3f, 0.0f);
-        gl.glBegin(GL.GL_TRIANGLES);
-        gl.glVertex2f(25, 40);
-        gl.glVertex2f(28, 40 + flameHeight);
-        gl.glVertex2f(20, 40);
+        // قاعدة الصاروخ
+        gl.glBegin(GL.GL_QUADS);
+        gl.glVertex2f(width * 0.3f, height);
+        gl.glVertex2f(width * 0.7f, height);
+        gl.glVertex2f(width * 0.6f, height * 1.2f);
+        gl.glVertex2f(width * 0.4f, height * 1.2f);
+        gl.glEnd();
+
+        // النوافذ/التفاصيل
+        gl.glColor3f(0.3f, 0.3f, 1.0f);
+        gl.glBegin(GL.GL_QUADS);
+        gl.glVertex2f(width * 0.4f, height * 0.4f);
+        gl.glVertex2f(width * 0.6f, height * 0.4f);
+        gl.glVertex2f(width * 0.6f, height * 0.6f);
+        gl.glVertex2f(width * 0.4f, height * 0.6f);
         gl.glEnd();
     }
 

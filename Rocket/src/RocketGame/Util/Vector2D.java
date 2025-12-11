@@ -4,7 +4,7 @@ public class Vector2D {
     public float x;
     public float y;
 
-
+    // Constructors
     public Vector2D() {
         this(0, 0);
     }
@@ -14,6 +14,7 @@ public class Vector2D {
         this.y = y;
     }
 
+    // Vector operations
     public void add(Vector2D v) {
         this.x += v.x;
         this.y += v.y;

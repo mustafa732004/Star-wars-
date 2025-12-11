@@ -12,12 +12,12 @@ public class ParticleSystem {
     }
 
     public void update(float deltaTime) {
-
+        // Update all particles
         for (int i = 0; i < particles.size(); i++) {
             particles.get(i).update(deltaTime);
         }
 
-
+        // Remove dead particles (backwards)
         for (int i = particles.size() - 1; i >= 0; i--) {
             if (particles.get(i).isDead()) {
                 particles.remove(i);
@@ -25,6 +25,7 @@ public class ParticleSystem {
         }
     }
 
+    // Render all particles (SIMPLE - NO BLENDING)
     public void render(GL gl) {
         for (int i = 0; i < particles.size(); i++) {
             particles.get(i).render(gl);
