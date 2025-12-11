@@ -5,63 +5,52 @@ import RocketGame.Effects.ParticleSystem;
 import RocketGame.Input.InputHandler;
 import RocketGame.Audio.SoundManager;
 import RocketGame.Util.*;
-
+import RocketGame.Rendering.GameRenderer;
 import java.awt.event.KeyEvent;
 import java.util.List;
 
 public class GameEngine {
-
     private GameState gameState;
     private CollisionManager collisionManager;
     private ParticleSystem particleSystem;
     private InputHandler inputHandler;
     private SoundManager soundManager;
-
+    private GameRenderer gameRenderer;
     private long gameOverTimestamp = 0;
-
     private long lastUpdateTime;
     private float deltaTime;
-
     private long lastObstacleSpawn;
     private long lastEnemySpawn;
     private int obstacleSpawnInterval;
     private int enemySpawnInterval;
-
     private static final int MIN_OBSTACLE_INTERVAL = 500;
     private static final int MAX_OBSTACLE_INTERVAL = 2000;
-
-    private boolean levelTransitioning;
+    private boolean levelTransitioning = false;
     private long levelTransitionStartTime;
-    private int levelTransitionDuration;
-
-    private boolean showUpgradeMenu;
+    private int levelTransitionDuration = 2000;
+    private boolean showUpgradeMenu = false;
     private String[] upgradeOptions;
     private int selectedUpgrade;
-
     private long lastMouseShot = 0;
-
     private int currentLevelDifficulty;
     private boolean isMultiplayerMode;
-
     private boolean isAIMode;
     private AIController aiController;
+    private GameTimeCalculator gameTimeCalculator;
 
-    public GameEngine(InputHandler inputHandler , boolean isMultiplayer , boolean isAI , int level , String username , String username2) {
+    public GameEngine(InputHandler inputHandler, boolean isMultiplayer, boolean isAI, int level, String username, String username2) {
         this.inputHandler = inputHandler;
-
         this.isMultiplayerMode = isMultiplayer;
         this.currentLevelDifficulty = level;
         this.isAIMode = isAI;
-
         this.soundManager = SoundManager.getInstance();
         this.particleSystem = new ParticleSystem();
         this.gameState = new GameState();
-
-        this.gameState.initialize(isMultiplayer , level);
+        this.gameState.initialize(isMultiplayer, level);
         this.gameState.setUsername(username);
         this.gameState.setUsername2(username2);
-
         this.collisionManager = new CollisionManager(particleSystem);
+        this.gameTimeCalculator = new GameTimeCalculator();
 
         if (isMultiplayer && isAI) {
             this.aiController = new AIController(gameState);
@@ -69,18 +58,17 @@ public class GameEngine {
 
         this.lastUpdateTime = System.currentTimeMillis();
         this.deltaTime = 0;
-
         this.obstacleSpawnInterval = 1000;
         this.enemySpawnInterval = 2000;
         this.lastObstacleSpawn = System.currentTimeMillis();
         this.lastEnemySpawn = System.currentTimeMillis();
-
         this.levelTransitioning = false;
         this.levelTransitionDuration = 2000;
-
         this.showUpgradeMenu = false;
-        this.upgradeOptions = new String[]{"Damage Boost", "Speed Boost", "Fire Rate"};
+        this.upgradeOptions = new String[]{"Add Life", "Damage Boost", "Speed Boost", "Fire Rate"};
         this.selectedUpgrade = 0;
+
+        soundManager.startBackgroundMusic("background");
     }
 
     private float findObstacleX(float width) {
@@ -117,6 +105,14 @@ public class GameEngine {
         this.inputHandler = inputHandler;
     }
 
+    public void setGameRenderer(GameRenderer gameRenderer) {
+        this.gameRenderer = gameRenderer;
+    }
+
+    public void initialization(InputHandler inputHandler) {
+        initializeInputHandler(inputHandler);
+    }
+
     public void update() {
         long currentTime = System.currentTimeMillis();
         deltaTime = (currentTime - lastUpdateTime) / 1000.0f;
@@ -145,6 +141,7 @@ public class GameEngine {
             handleLevelTransition();
             return;
         }
+
         if (aiController != null) {
             aiController.update();
         }
@@ -158,7 +155,17 @@ public class GameEngine {
     }
 
     private void handlePauseInput() {
-        if (inputHandler != null && inputHandler.isKeyPressed(KeyEvent.VK_ESCAPE)) {
+        if (inputHandler == null) return;
+
+        if (inputHandler.isKeyPressed(KeyEvent.VK_ESCAPE)) {
+            if (gameState.isPaused()) {
+                gameTimeCalculator.endPause();
+                soundManager.resumeBackgroundMusic();
+            } else {
+
+                gameTimeCalculator.startPause();
+                soundManager.pauseBackgroundMusic();
+            }
             gameState.togglePause();
         }
     }
@@ -172,18 +179,21 @@ public class GameEngine {
             return;
         }
 
-        if (inputHandler != null && (inputHandler.isKeyPressed(KeyEvent.VK_SPACE) ||
-                inputHandler.isKeyPressed(KeyEvent.VK_ENTER))) {
-            restart();
+        if (inputHandler != null) {
+            if (inputHandler.isKeyPressed(KeyEvent.VK_SPACE) || inputHandler.isKeyPressed(KeyEvent.VK_ENTER)) {
+                Rocket rocket = gameState.getRocket();
+                int finalScore = gameState.getScore();
+                boolean isVictory = rocket.getHealth() > 0;
+                recordGameStats(gameState.getUsername(), finalScore, isVictory);
+                restart();
+            }
         }
     }
 
     private void shootBullet() {
         Rocket rocket = gameState.getRocket();
 
-        if (!rocket.canShoot()) {
-            return;
-        }
+        if (!rocket.canShoot()) return;
 
         rocket.shoot();
         soundManager.playShoot();
@@ -193,10 +203,9 @@ public class GameEngine {
         int damage = (int) (rocket.getDamage() * gameState.getDamageMultiplier());
 
         Bullet bullet = new Bullet(bulletX, bulletY, damage, "normal");
-
         bullet.setPlayerNumber(1);
-
         gameState.getBullets().add(bullet);
+
         String weaponType = rocket.getWeaponType();
 
         if (weaponType.equals("spread")) {
@@ -250,10 +259,10 @@ public class GameEngine {
             boss.update(1.0f);
 
             if (boss.canShoot()) {
-                java.util.List<Vector2D> positions = boss.getBulletSpawnPositions();
+                List<Vector2D> positions = boss.getBulletSpawnPositions();
                 for (int i = 0; i < positions.size(); i++) {
                     Vector2D pos = positions.get(i);
-                    Bullet bossBullet = new Bullet(pos.x, pos.y, 15, true , "planet");
+                    Bullet bossBullet = new Bullet(pos.x, pos.y, 15, true, "planet");
                     gameState.getBullets().add(bossBullet);
                 }
             }
@@ -264,18 +273,12 @@ public class GameEngine {
 
         if (Math.random() < 0.3) {
             Rocket rocket = gameState.getRocket();
-            particleSystem.createEngineTrail(
-                    rocket.getX() + rocket.getWidth() / 2 - 2,
-                    rocket.getY() + rocket.getHeight()
-            );
+            particleSystem.createEngineTrail(rocket.getX() + rocket.getWidth() / 2 - 2, rocket.getY() + rocket.getHeight());
         }
 
         if (gameState.getRocket2() != null && Math.random() < 0.3) {
             Rocket rocket2 = gameState.getRocket2();
-            particleSystem.createEngineTrail(
-                    rocket2.getX() + rocket2.getWidth() / 2 - 2,
-                    rocket2.getY() + rocket2.getHeight()
-            );
+            particleSystem.createEngineTrail(rocket2.getX() + rocket2.getWidth() / 2 - 2, rocket2.getY() + rocket2.getHeight());
         }
     }
 
@@ -301,17 +304,26 @@ public class GameEngine {
         if (inputHandler.isSpacePressed()) {
             shootBullet();
         }
+
         if (gameState.getRocket2() != null && !isAIMode) {
             Rocket rocket2 = gameState.getRocket2();
             moveSpeed = rocket2.getSpeed() * gameState.getSpeedMultiplier();
 
-            if (inputHandler.isWPressed()) rocket2.move(0, -moveSpeed, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-            if (inputHandler.isSPressed()) rocket2.move(0, moveSpeed, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-            if (inputHandler.isAPressed()) rocket2.move(-moveSpeed, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-            if (inputHandler.isDPressed()) rocket2.move(moveSpeed, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+            if (inputHandler.isWPressed()) {
+                rocket2.move(0, -moveSpeed, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+            }
+            if (inputHandler.isSPressed()) {
+                rocket2.move(0, moveSpeed, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+            }
+            if (inputHandler.isAPressed()) {
+                rocket2.move(-moveSpeed, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+            }
+            if (inputHandler.isDPressed()) {
+                rocket2.move(moveSpeed, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+            }
 
-            float targetX = inputHandler.getMouseX() - rocket2.getWidth()/2;
-            float targetY = inputHandler.getMouseY() - rocket2.getHeight()/2;
+            float targetX = inputHandler.getMouseX() - rocket2.getWidth() / 2;
+            float targetY = inputHandler.getMouseY() - rocket2.getHeight() / 2;
             float dx = (targetX - rocket2.getX()) * 0.1f;
             float dy = (targetY - rocket2.getY()) * 0.1f;
             rocket2.move(dx, dy, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
@@ -332,28 +344,28 @@ public class GameEngine {
 
     private void shootWithMouse(Rocket rocket) {
         long currentTime = System.currentTimeMillis();
+        if (currentTime - lastMouseShot < 200) return;
 
-        if (currentTime - lastMouseShot > 200) {
-            if (rocket.canShoot()) {
-                rocket.shoot();
-                soundManager.playShoot();
-                float bx = rocket.getX() + rocket.getWidth()/2 - 3;
-                float by = rocket.getY();
-                int dmg = (int)(rocket.getDamage() * gameState.getDamageMultiplier());
-                Bullet b = new Bullet(bx, by, dmg, "normal");
-                gameState.getBullets().add(b);
-                b.setPlayerNumber(2);
-                lastMouseShot = currentTime;
-            }
+        if (rocket.canShoot()) {
+            rocket.shoot();
+            soundManager.playShoot();
+
+            float bx = rocket.getX() + rocket.getWidth() / 2 - 3;
+            float by = rocket.getY();
+            int dmg = (int) (rocket.getDamage() * gameState.getDamageMultiplier());
+
+            Bullet b = new Bullet(bx, by, dmg, "normal");
+            gameState.getBullets().add(b);
+            b.setPlayerNumber(2);
+
+            lastMouseShot = currentTime;
         }
     }
 
     private void spawnEntities() {
         long currentTime = System.currentTimeMillis();
 
-        if (gameState.hasBoss()) {
-            return;
-        }
+        if (gameState.hasBoss()) return;
 
         float difficulty = gameState.getDifficulty();
         int adjustedObstacleInterval = (int) (obstacleSpawnInterval / difficulty);
@@ -362,9 +374,9 @@ public class GameEngine {
         adjustedObstacleInterval = Math.max(MIN_OBSTACLE_INTERVAL, adjustedObstacleInterval);
         adjustedEnemyInterval = Math.max(1500, adjustedEnemyInterval);
 
-        if (currentTime - lastObstacleSpawn > adjustedObstacleInterval) {
+        if (currentTime - lastObstacleSpawn >= adjustedObstacleInterval) {
             int baseCount = 5;
-            int extraCount = (int) (difficulty * 2);
+            int extraCount = (int) (difficulty / 2);
             int obstacleCount = Math.min(baseCount + extraCount, 15);
 
             for (int i = 0; i < obstacleCount; i++) {
@@ -373,7 +385,7 @@ public class GameEngine {
             lastObstacleSpawn = currentTime;
         }
 
-        if (currentTime - lastEnemySpawn > adjustedEnemyInterval) {
+        if (currentTime - lastEnemySpawn >= adjustedEnemyInterval) {
             spawnEnemy();
             lastEnemySpawn = currentTime;
         }
@@ -387,19 +399,19 @@ public class GameEngine {
         float width = 40 + (float) (Math.random() * 40);
         float height = 40 + (float) (Math.random() * 20);
         float x = findObstacleX(width);
-        if (x > -1) {
-            float y = -height;
-            float speed = Constants.ENEMY_BASE_SPEED * gameState.getDifficulty();
 
-            Obstacle obstacle = new Obstacle(x, y, width, height, speed);
-            gameState.getObstacles().add(obstacle);
-        }
+        if (x == -1) return;
+
+        float y = -height;
+        float speed = Constants.ENEMY_BASE_SPEED * gameState.getDifficulty();
+
+        Obstacle obstacle = new Obstacle(x, y, width, height, speed);
+        gameState.getObstacles().add(obstacle);
     }
 
     private float findEnemyPosition(float width, float height, boolean isShooter) {
         List<Enemy> enemies = gameState.getEnemies();
         float y = -height;
-
         float minSpacing = isShooter ? 120 : 60;
         int maxAttempts = isShooter ? 40 : 20;
 
@@ -414,15 +426,19 @@ public class GameEngine {
 
                 float verticalDistance = Math.abs(y - existing.getY());
 
-                if (isShooter && existing.getType() == Enemy.EnemyType.SHOOTER) {
-                    if (distance < minSpacing) {
-                        validPosition = false;
-                        break;
+                if (isShooter) {
+                    if (existing.getType() == Enemy.EnemyType.SHOOTER) {
+                        if (distance < minSpacing) {
+                            validPosition = false;
+                            break;
+                        }
                     }
-                } else if (verticalDistance < 100) {
-                    if (distance < (width + existing.getWidth()) / 2 + (minSpacing / 2)) {
-                        validPosition = false;
-                        break;
+                } else {
+                    if (verticalDistance < 100) {
+                        if (distance < width + existing.getWidth() / 2 + minSpacing / 2) {
+                            validPosition = false;
+                            break;
+                        }
                     }
                 }
             }
@@ -438,7 +454,6 @@ public class GameEngine {
 
             for (Enemy existing : enemies) {
                 if (isShooter && existing.getType() == Enemy.EnemyType.SHOOTER) {
-                    // At least 60px from other shooters
                     float centerX1 = x + width / 2;
                     float centerX2 = existing.getX() + existing.getWidth() / 2;
                     if (Math.abs(centerX1 - centerX2) < 60) {
@@ -449,12 +464,12 @@ public class GameEngine {
             }
 
             if (validPosition) {
-                System.out.println("[SPAWN] Using minimal spacing");
+                System.out.println("SPAWN: Using minimal spacing");
                 return x;
             }
         }
 
-        return -1; // No position found
+        return -1;
     }
 
     private void spawnEnemy() {
@@ -462,25 +477,18 @@ public class GameEngine {
         float height = 40;
         float y = -height;
         float speed = Constants.ENEMY_BASE_SPEED * gameState.getDifficulty();
-
         boolean spawnShooter = Math.random() < 0.75;
 
         float x = findEnemyPosition(width, height, spawnShooter);
-
-        if (x < 0) {
-            return;
-        }
+        if (x < 0) return;
 
         Enemy.EnemyType type;
+
         if (spawnShooter) {
             type = Enemy.EnemyType.SHOOTER;
         } else {
-            Enemy.EnemyType[] otherTypes = {
-                    Enemy.EnemyType.BASIC,
-                    Enemy.EnemyType.ZIGZAG,
-                    Enemy.EnemyType.KAMIKAZE
-            };
-            type = otherTypes[(int)(Math.random() * otherTypes.length)];
+            Enemy.EnemyType[] otherTypes = {Enemy.EnemyType.BASIC, Enemy.EnemyType.ZIGZAG, Enemy.EnemyType.KAMIKAZE};
+            type = otherTypes[(int) (Math.random() * otherTypes.length)];
         }
 
         Enemy enemy = new Enemy(x, y, speed, type);
@@ -500,7 +508,6 @@ public class GameEngine {
     }
 
     private void updateGameLogic() {
-
         if (!gameState.hasBoss()) {
             checkLevelUp();
         }
@@ -508,14 +515,10 @@ public class GameEngine {
 
     private void checkLevelUp() {
         int scorePerLevel = 1500;
-
         int totalScore = gameState.getScore() + gameState.getScorePlayer2();
+        int expectedLevel = totalScore / scorePerLevel + 1;
 
-        int expectedLevel = (totalScore / scorePerLevel) + 1;
-
-        if (gameState.getLevel() >= 3) {
-            return;
-        }
+        if (gameState.getLevel() >= 3) return;
 
         if (expectedLevel > gameState.getLevel()) {
             startLevelTransition();
@@ -534,7 +537,7 @@ public class GameEngine {
         long currentTime = System.currentTimeMillis();
         long elapsed = currentTime - levelTransitionStartTime;
 
-        if (elapsed > levelTransitionDuration) {
+        if (elapsed >= levelTransitionDuration) {
             levelTransitioning = false;
             gameState.levelUp();
         }
@@ -557,8 +560,7 @@ public class GameEngine {
             }
         }
 
-        if (inputHandler.isKeyPressed(KeyEvent.VK_SPACE) ||
-                inputHandler.isKeyPressed(KeyEvent.VK_ENTER)) {
+        if (inputHandler.isKeyPressed(KeyEvent.VK_SPACE) || inputHandler.isKeyPressed(KeyEvent.VK_ENTER)) {
             applyUpgrade(selectedUpgrade);
             showUpgradeMenu = false;
         }
@@ -566,9 +568,15 @@ public class GameEngine {
 
     public void applyUpgrade(int upgradeIndex) {
         switch (upgradeIndex) {
-            case 0: gameState.addLife(); break;
-            case 1: gameState.upgradeDamage(); break;
-            case 2: gameState.upgradeSpeed(); break;
+            case 0:
+                gameState.addLife();
+                break;
+            case 1:
+                gameState.upgradeDamage();
+                break;
+            case 2:
+                gameState.upgradeSpeed();
+                break;
         }
     }
 
@@ -609,16 +617,62 @@ public class GameEngine {
         lastEnemySpawn = System.currentTimeMillis();
         levelTransitioning = false;
         showUpgradeMenu = false;
-
         gameOverTimestamp = 0;
+        gameTimeCalculator.reset();
 
+
+        soundManager.resumeBackgroundMusic();
     }
 
-    public GameState getGameState() { return gameState; }
-    public ParticleSystem getParticleSystem() { return particleSystem; }
-    public boolean isShowingUpgradeMenu() { return showUpgradeMenu; }
-    public String[] getUpgradeOptions() { return upgradeOptions; }
-    public int getSelectedUpgrade() { return selectedUpgrade; }
-    public boolean isLevelTransitioning() { return levelTransitioning; }
-    public float getDeltaTime() { return deltaTime; }
+    public void initializeInputHandler(InputHandler inputHandler) {
+        if (gameRenderer != null && inputHandler != null) {
+            inputHandler.setGameRenderer(gameRenderer);
+            inputHandler.setSoundManager(soundManager);
+            System.out.println("INIT: InputHandler, GameRenderer, SoundManager");
+        }
+    }
+
+    public void recordGameStats(String username, int score, boolean isVictory) {
+        long playTimeSeconds = gameTimeCalculator.getGameTimeInSeconds();
+        UserStatsManager statsManager = new UserStatsManager();
+        statsManager.updatePlayerStats(username, score, playTimeSeconds, isVictory);
+        statsManager.printLeaderboard();
+
+        System.out.println("GAME OVER: " + gameTimeCalculator.getFormattedGameTime());
+        System.out.println("GAME OVER SCORE: " + score);
+        //3ash
+        System.out.println("GAME OVER: " + (isVictory ? "VICTORY" : "DEFEAT"));
+    }
+
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    public ParticleSystem getParticleSystem() {
+        return particleSystem;
+    }
+
+    public boolean isShowingUpgradeMenu() {
+        return showUpgradeMenu;
+    }
+
+    public String[] getUpgradeOptions() {
+        return upgradeOptions;
+    }
+
+    public int getSelectedUpgrade() {
+        return selectedUpgrade;
+    }
+
+    public boolean isLevelTransitioning() {
+        return levelTransitioning;
+    }
+
+    public float getDeltaTime() {
+        return deltaTime;
+    }
+
+    public GameTimeCalculator getGameTimeCalculator() {
+        return gameTimeCalculator;
+    }
 }

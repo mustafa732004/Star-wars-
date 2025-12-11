@@ -6,22 +6,22 @@ import RocketGame.Util.Vector2D;
 public class PowerUp extends GameObject {
     private PowerupType type;
     private float speed;
-    private float rotation; // Spinning animation
-    private float pulse; // Size pulsing effect
+    private float rotation;
+    private float pulse;
     private long spawnTime;
 
     // Powerup types
     public enum PowerupType {
-        HEALTH,      // Restore health
-        SHIELD,      // Add shield
-        RAPID_FIRE,  // Faster shooting
-        SPREAD,      // Spread shot
-        LASER,       // Laser weapon
-        COIN,        // Bonus points
-        EXTRA_LIFE   // +1 life
+        HEALTH,
+        SHIELD,
+        RAPID_FIRE,
+        SPREAD,
+        LASER,
+        COIN,
+        EXTRA_LIFE
     }
 
-    // Constructor with specific type
+
     public PowerUp(float x, float y, PowerupType type) {
         super(x, y, 30, 30);
 
@@ -97,11 +97,11 @@ public class PowerUp extends GameObject {
     }
 
     private void drawHealth(GL gl) {
-        // Red background
+
         gl.glColor3f(0.9f, 0.2f, 0.2f);
         drawSquare(gl, 15);
 
-        // White plus sign
+
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glLineWidth(5.0f);
         gl.glBegin(GL.GL_LINES);
@@ -111,114 +111,109 @@ public class PowerUp extends GameObject {
         gl.glVertex2f(0, 10);
         gl.glEnd();
 
-        // Border
+
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glLineWidth(2.0f);
         drawSquareOutline(gl, 15);
     }
 
     private void drawShield(GL gl) {
-        // Blue background
         gl.glColor3f(0.2f, 0.6f, 1.0f);
         drawCircle(gl, 15);
 
-        // White shield icon
+
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glLineWidth(4.0f);
         drawHexagon(gl, 10);
 
-        // Inner detail
+
         gl.glLineWidth(2.0f);
         drawHexagon(gl, 6);
     }
 
     private void drawRapidFire(GL gl) {
-        // Yellow background
+
         gl.glColor3f(1.0f, 0.9f, 0.2f);
         drawSquare(gl, 15);
 
-        // Orange triple bullets
+
         gl.glColor3f(1.0f, 0.5f, 0.0f);
-        // Three vertical rectangles
+
         drawRect(gl, -9, -8, 3, 16);
         drawRect(gl, -1.5f, -8, 3, 16);
         drawRect(gl, 6, -8, 3, 16);
 
-        // Border
+
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glLineWidth(2.0f);
         drawSquareOutline(gl, 15);
     }
 
     private void drawSpread(GL gl) {
-        // Green background
+
         gl.glColor3f(0.2f, 0.9f, 0.3f);
         drawSquare(gl, 15);
 
-        // White arrows spreading out
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glLineWidth(3.0f);
 
-        // Three lines in fan pattern
         gl.glBegin(GL.GL_LINES);
-        // Left arrow
         gl.glVertex2f(0, 8);
         gl.glVertex2f(-8, -8);
-        // Center arrow
+
         gl.glVertex2f(0, 8);
         gl.glVertex2f(0, -10);
-        // Right arrow
+
         gl.glVertex2f(0, 8);
         gl.glVertex2f(8, -8);
         gl.glEnd();
 
-        // Arrow tips
+
         drawArrowTip(gl, -8, -8, 225);
         drawArrowTip(gl, 0, -10, 270);
         drawArrowTip(gl, 8, -8, 315);
     }
 
     private void drawLaser(GL gl) {
-        // Cyan background
+
         gl.glColor3f(0.0f, 0.9f, 0.9f);
         drawSquare(gl, 15);
 
-        // White laser beam
+
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         drawRect(gl, -2, -12, 4, 24);
 
-        // Glow lines
+
         gl.glColor3f(0.8f, 1.0f, 1.0f);
         drawRect(gl, -5, -12, 2, 24);
         drawRect(gl, 3, -12, 2, 24);
 
-        // Border
+
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glLineWidth(2.0f);
         drawSquareOutline(gl, 15);
     }
 
     private void drawCoin(GL gl) {
-        // Gold circle
+
         gl.glColor3f(1.0f, 0.84f, 0.0f);
         drawCircle(gl, 15);
 
-        // Inner circle (darker gold)
+
         gl.glColor3f(0.85f, 0.65f, 0.0f);
         drawCircle(gl, 12);
 
-        // Star pattern
         gl.glColor3f(1.0f, 1.0f, 0.6f);
         gl.glLineWidth(3.0f);
         gl.glBegin(GL.GL_LINES);
-        // Diagonal cross
+
         gl.glVertex2f(-6, -6);
         gl.glVertex2f(6, 6);
         gl.glVertex2f(-6, 6);
         gl.glVertex2f(6, -6);
         gl.glEnd();
 
-        // Shine effect
+
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glPointSize(4.0f);
         gl.glBegin(GL.GL_POINTS);
@@ -347,12 +342,12 @@ public class PowerUp extends GameObject {
     public int getDuration() {
         switch (type) {
             case RAPID_FIRE:
-                return 5000; // 5 seconds
+                return 5000;
             case SPREAD:
             case LASER:
-                return 8000; // 8 seconds
+                return 8000;
             default:
-                return 0; // Permanent effect
+                return 0;
         }
     }
 

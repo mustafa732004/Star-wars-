@@ -46,6 +46,7 @@ public class CollisionManager {
                 continue;
             }
 
+            // Enemies
             for (int j = enemies.size() - 1; j >= 0; j--) {
                 Enemy enemy = enemies.get(j);
                 if (bullet.collidesWith(enemy)) {
@@ -111,7 +112,7 @@ public class CollisionManager {
                     soundManager.playHit();
 
                     if (boss.isDefeated()) {
-                        System.out.println("BOSS DEFEATED - TRIGGERING VICTORY"); // Debug print
+                        System.out.println("kda ksebna");
 
                         particleSystem.createBossExplosion(boss.getX() + boss.getWidth() / 2, boss.getY() + boss.getHeight() / 2);
                         soundManager.playExplosion();

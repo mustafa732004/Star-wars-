@@ -3,6 +3,7 @@ package RocketGame.Audio;
 import javax.sound.sampled.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,11 +12,19 @@ public class SoundManager {
     private final Map<String, Clip> soundClips;
     private boolean muted;
     private float volume;
+    private Clip currentBackgroundMusic;
+
+    // Sound file directory
+    private static final String SOUNDS_FOLDER = "Assets/Sounds/";
 
     private SoundManager() {
         soundClips = new HashMap<>();
         muted = false;
         volume = 0.5f;
+        currentBackgroundMusic = null;
+
+// Try to load sound files (optional)
+        tryLoadSounds();
     }
 
     public static SoundManager getInstance() {
@@ -25,33 +34,66 @@ public class SoundManager {
         return instance;
     }
 
-    // Load sound file
-    public void loadSound(String name, String filepath) {
+    // Try to load sound files (won't crash if files don't exist)
+    private void tryLoadSounds() {
         try {
-            File soundFile = new File(filepath);
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundFile);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioStream);
-            soundClips.put(name, clip);
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
-            System.err.println("Error loading sound: " + name);
-            e.printStackTrace();
+// Try to load sound files if they exist
+            loadSoundIfExists("shoot", "shoot.wav");
+            loadSoundIfExists("hit", "hit.wav");
+            loadSoundIfExists("explosion", "explosion.wav");
+            loadSoundIfExists("powerup", "powerup.wav");
+            loadSoundIfExists("damage", "damage.wav");
+            loadSoundIfExists("background", "background.wav");
+            loadSoundIfExists("menu", "menu.wav");
+            loadSoundIfExists("boss", "boss.wav");
+        } catch (Exception e) {
+// Silently fail - we'll use tones instead
+            System.out.println("Sound files not found,");
         }
     }
 
-    // Play sound
-    public void playSound(String name) {
+    // Load sound only if file exists
+    private void loadSoundIfExists(String name, String filename) {
+        try {
+            String filepath = SOUNDS_FOLDER + filename;
+            File soundFile = new File(filepath);
+
+            if (soundFile.exists()) {
+                AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundFile);
+                Clip clip = AudioSystem.getClip();
+                clip.open(audioStream);
+                soundClips.put(name, clip);
+                System.out.println("Loaded sound file: " + filename);
+            }
+        } catch (Exception e) {
+
+        }
+    }
+
+    private boolean hasSoundFile(String name) {
+        Clip clip = soundClips.get(name);
+        return clip != null;
+    }
+
+    private void playSoundOrTone(String name, float frequency, int duration) {
         if (muted) return;
 
-        Clip clip = soundClips.get(name);
-        if (clip != null) {
-            clip.setFramePosition(0); // Rewind to beginning
-            clip.start();
+        if (hasSoundFile(name)) {
+            Clip clip = soundClips.get(name);
+            if (clip != null) {
+                if (clip.isRunning()) {
+                    clip.stop();
+                }
+                clip.setFramePosition(0);
+                clip.start();
+            }
+        } else {
+
+            playTone(frequency, duration);
         }
     }
 
-    // Play procedural sound (simple beep)
-    public void playTone(float frequency, int duration) {
+    private void playTone(float frequency, int duration) {
         if (muted) return;
 
         new Thread(() -> {
@@ -75,34 +117,95 @@ public class SoundManager {
         }).start();
     }
 
-    // Sound effects shortcuts
+
+// BACKGROUND MUSIC METHODS
+
+    public void startBackgroundMusic(String musicName) {
+        if (muted) return;
+
+        stopBackgroundMusic();
+
+        if (hasSoundFile(musicName)) {
+            currentBackgroundMusic = soundClips.get(musicName);
+            if (currentBackgroundMusic != null) {
+                currentBackgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+                System.out.println("Started background music: " + musicName);
+            }
+        } else {
+            System.out.println("Background music not found: " + musicName);
+        }
+    }
+
+    public void stopBackgroundMusic() {
+        if (currentBackgroundMusic != null && currentBackgroundMusic.isRunning()) {
+            currentBackgroundMusic.stop();
+            currentBackgroundMusic.setFramePosition(0); // Rewind
+            currentBackgroundMusic = null;
+        }
+    }
+
+    public void pauseBackgroundMusic() {
+        if (currentBackgroundMusic != null && currentBackgroundMusic.isRunning()) {
+            currentBackgroundMusic.stop();
+        }
+    }
+
+    public void resumeBackgroundMusic() {
+        if (currentBackgroundMusic != null && !currentBackgroundMusic.isRunning()) {
+            currentBackgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+        }
+    }
+
+    public void setBackgroundMusicVolume(float bgmVolume) {
+        if (currentBackgroundMusic != null &&
+                currentBackgroundMusic.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+
+            FloatControl gainControl = (FloatControl) currentBackgroundMusic.getControl(FloatControl.Type.MASTER_GAIN);
+            float dB = (float) (Math.log(bgmVolume) / Math.log(10.0) * 20.0);
+            gainControl.setValue(dB);
+        }
+    }
+
+// SOUND EFFECTS METHODS
+
     public void playShoot() {
-        playTone(800, 100);
+        playSoundOrTone("shoot", 800, 100);
     }
 
     public void playHit() {
-        playTone(200, 200);
+        playSoundOrTone("hit", 200, 200);
     }
 
     public void playExplosion() {
-        playTone(100, 500);
+        playSoundOrTone("explosion", 100, 500);
     }
 
     public void playPowerup() {
-        playTone(600, 300);
+        playSoundOrTone("powerup", 600, 300);
     }
 
     public void playDamage() {
-        playTone(150, 300);
+        playSoundOrTone("damage", 150, 300);
     }
 
-    // Controls
+// MUTE / VOLUME CONTROLS
+
     public void toggleMute() {
         muted = !muted;
+        if (muted) {
+            pauseBackgroundMusic();
+        } else {
+            resumeBackgroundMusic();
+        }
     }
 
     public void setMuted(boolean muted) {
         this.muted = muted;
+        if (muted) {
+            pauseBackgroundMusic();
+        } else {
+            resumeBackgroundMusic();
+        }
     }
 
     public boolean isMuted() {
@@ -113,11 +216,23 @@ public class SoundManager {
         this.volume = Math.max(0.0f, Math.min(1.0f, volume));
     }
 
-    // Cleanup
+    public float getVolume() {
+        return volume;
+    }
+
+// CLEANUP
+
     public void cleanup() {
+        stopBackgroundMusic();
         for (Clip clip : soundClips.values()) {
             clip.close();
         }
         soundClips.clear();
     }
+
+    public Clip getClip(String name) {
+        return soundClips.get(name);
+    }
+
+
 }

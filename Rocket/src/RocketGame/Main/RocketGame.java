@@ -2,6 +2,8 @@ package RocketGame.Main;
 
 import javax.media.opengl.GLCanvas;
 import javax.swing.*;
+
+import RocketGame.Audio.SoundManager;
 import RocketGame.Core.GameEngine;
 import RocketGame.Core.Home;
 import RocketGame.Input.InputHandler;
@@ -47,20 +49,20 @@ public class RocketGame extends JFrame {
         glCanvas.removeMouseListener(homeScreen);
 
         gameEngine = new GameEngine(null , isMultiplayer , isAI , level , username , username2);
-
         inputHandler = new InputHandler(gameEngine, this);
-
         gameEngine.setInputHandler(inputHandler);
 
         gameRenderer = new GameRenderer(gameEngine);
+
+        gameEngine.setGameRenderer(gameRenderer);
 
         glCanvas.addGLEventListener(gameRenderer);
         glCanvas.addKeyListener(inputHandler);
         glCanvas.addMouseListener(inputHandler);
         glCanvas.addMouseMotionListener(inputHandler);
-
         glCanvas.requestFocusInWindow();
     }
+
 
     private void configureWindow() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

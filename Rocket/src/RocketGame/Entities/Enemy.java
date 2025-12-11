@@ -14,15 +14,15 @@ public class Enemy extends GameObject {
     private float[] color;
 
     public enum EnemyType {
-        BASIC,      // Just moves down
-        ZIGZAG,     // Moves side to side
-        SHOOTER,    // Stays and shoots
-        KAMIKAZE    // Rushes at player
+        BASIC,
+        ZIGZAG,
+        SHOOTER,
+        KAMIKAZE
     }
 
-    // Constructor
+
     public Enemy(float x, float y, float speed, EnemyType type) {
-        super(x, y, 40, 40); // 40x40 default size
+        super(x, y, 40, 40);
 
         this.speed = speed;
         this.type = type;
@@ -33,7 +33,7 @@ public class Enemy extends GameObject {
             case BASIC:
                 this.health = 1;
                 this.maxHealth = 1;
-                this.color = new float[]{0.7f, 0.3f, 0.7f}; // Purple
+                this.color = new float[]{0.7f, 0.3f, 0.7f};
                 this.velocity.set(0, speed);
                 break;
 
@@ -129,9 +129,9 @@ public class Enemy extends GameObject {
         gl.glColor3f(color[0], color[1], color[2]);
 
         gl.glBegin(GL.GL_TRIANGLES);
-        gl.glVertex2f(width * 0.5f, height); // Bottom point
-        gl.glVertex2f(0, 0);                  // Top left
-        gl.glVertex2f(width, 0);              // Top right
+        gl.glVertex2f(width * 0.5f, height);
+        gl.glVertex2f(0, 0);
+        gl.glVertex2f(width, 0);
         gl.glEnd();
 
         gl.glColor3f(1.0f, 0.0f, 0.0f);
@@ -141,7 +141,7 @@ public class Enemy extends GameObject {
         gl.glVertex2f(width * 0.7f, height * 0.3f);
         gl.glEnd();
 
-        // Outline
+
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glLineWidth(2.0f);
         gl.glBegin(GL.GL_LINE_LOOP);
@@ -155,10 +155,10 @@ public class Enemy extends GameObject {
         gl.glColor3f(color[0], color[1], color[2]);
 
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(width * 0.5f, 0);        // Top
-        gl.glVertex2f(width, height * 0.5f);   // Right
-        gl.glVertex2f(width * 0.5f, height);   // Bottom
-        gl.glVertex2f(0, height * 0.5f);       // Left
+        gl.glVertex2f(width * 0.5f, 0);
+        gl.glVertex2f(width, height * 0.5f);
+        gl.glVertex2f(width * 0.5f, height);
+        gl.glVertex2f(0, height * 0.5f);
         gl.glEnd();
 
         gl.glColor3f(1.0f, 1.0f, 1.0f);

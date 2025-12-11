@@ -184,14 +184,14 @@ public class Boss extends GameObject {
         float barX = -position.x + (800 - barWidth) / 2;
         float barY = -position.y + 20;
 
-        // الخلفية
+
         gl.glColor3f(0.3f, 0.0f, 0.0f);
         gl.glBegin(GL.GL_QUADS);
         gl.glVertex2f(barX, barY); gl.glVertex2f(barX + barWidth, barY);
         gl.glVertex2f(barX + barWidth, barY + barHeight); gl.glVertex2f(barX, barY + barHeight);
         gl.glEnd();
 
-        // الصحة الحالية
+
         float healthPercent = (float) health / maxHealth;
         gl.glColor3f(1.0f - healthPercent, healthPercent, 0.0f);
         gl.glBegin(GL.GL_QUADS);
@@ -209,6 +209,7 @@ public class Boss extends GameObject {
         }
         gl.glEnd();
     }
+
 
     public int getHealth() { return health; }
     public boolean isDefeated() { return state == BossState.DEFEATED; }

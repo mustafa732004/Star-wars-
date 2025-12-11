@@ -24,17 +24,17 @@ public class Obstacle extends GameObject {
         DEBRIS
     }
 
-    // Constructor
+
     public Obstacle(float x, float y, float width, float height, float speed) {
         super(x, y, width, height);
 
         this.health = 1;
         this.maxHealth = 1;
 
-        // Set velocity to move downward
+
         this.velocity.set(0, speed);
 
-        // Random obstacle type
+
         int random = (int) (Math.random() * 3);
         if (random == 0) {
             this.type = ObstacleType.ASTEROID;
@@ -47,12 +47,12 @@ public class Obstacle extends GameObject {
             this.color = new float[]{0.7f, 0.3f, 0.7f};
         }
 
-        // تحميل الصور إذا لم تكن محملة
+
         if (!texturesLoaded) {
             loadPlanetTextures();
         }
 
-        // اختيار صورة عشوائية للكوكب
+
         selectPlanetTexture();
     }
 
@@ -114,28 +114,28 @@ public class Obstacle extends GameObject {
     private void adjustColorByPlanet(String planetName) {
         switch (planetName) {
             case "planet6.png":
-                this.color = new float[]{0.8f, 0.8f, 0.9f}; // أزرق فاتح
+                this.color = new float[]{0.8f, 0.8f, 0.9f};
                 break;
             case "planet1.png":
-                this.color = new float[]{1.0f, 0.7f, 0.3f}; // برتقالي
+                this.color = new float[]{1.0f, 0.7f, 0.3f};
                 break;
             case "planet2.png":
-                this.color = new float[]{0.6f, 0.9f, 0.6f}; // أخضر
+                this.color = new float[]{0.6f, 0.9f, 0.6f};
                 break;
             case "planet3.png":
-                this.color = new float[]{0.9f, 0.6f, 0.6f}; // أحمر فاتح
+                this.color = new float[]{0.9f, 0.6f, 0.6f};
                 break;
             case "planet4.png":
-                this.color = new float[]{0.8f, 0.6f, 0.9f}; // بنفسجي
+                this.color = new float[]{0.8f, 0.6f, 0.9f};
                 break;
             case "planet5.png":
-                this.color = new float[]{0.9f, 0.9f, 0.6f}; // أصفر
+                this.color = new float[]{0.9f, 0.9f, 0.6f};
                 break;
             case "planet7.png":
-                this.color = new float[]{0.9f, 0.9f, 0.6f}; // أصفر
+                this.color = new float[]{0.9f, 0.9f, 0.6f};
                 break;
             default:
-                this.color = new float[]{0.7f, 0.7f, 0.7f}; // رمادي
+                this.color = new float[]{0.7f, 0.7f, 0.7f};
         }
     }
 
@@ -169,7 +169,7 @@ public class Obstacle extends GameObject {
 
         gl.glColor3f(color[0], color[1], color[2]);
 
-        // رسم الكوكب كدائرة باستخدام النسيج
+
         drawTexturedCircle(gl, width / 2, height / 2, Math.min(width, height) / 2);
 
         currentTexture.disable();

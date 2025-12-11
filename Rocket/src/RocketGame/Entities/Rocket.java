@@ -101,7 +101,7 @@ public class Rocket extends GameObject {
         if (textureLoaded) return;
 
         try {
-//            String texturePath = "Assets/rocket.png";
+
             File textureFile = new File(texturePath);
 
             if (textureFile.exists()) {

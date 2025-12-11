@@ -6,22 +6,21 @@ import RocketGame.Util.Vector2D;
 public class Particle {
     private Vector2D position;
     private Vector2D velocity;
-    private float[] color; // RGB color
+    private float[] color; // rgb
     private float size;
-    private float life; // 1.0 = just spawned, 0.0 = dead
+    private float life;
     private float decay;
     private ParticleType type;
 
-    // Particle types
+
     public enum ParticleType {
-        EXPLOSION,  // Fire/smoke from explosions
-        SPARK,      // Bright sparks
-        SMOKE,      // Gray smoke trails
-        DEBRIS,     // Small debris chunks
-        STAR        // Twinkle effect
+        EXPLOSION,
+        SPARK,
+        SMOKE,
+        DEBRIS,
+        STAR
     }
 
-    // Constructor
     public Particle(float x, float y, float vx, float vy, float[] color, float size, ParticleType type) {
         this.position = new Vector2D(x, y);
         this.velocity = new Vector2D(vx, vy);
@@ -30,7 +29,6 @@ public class Particle {
         this.life = 1.0f;
         this.type = type;
 
-        // Set decay rate based on type
         switch (type) {
             case EXPLOSION:
                 this.decay = 0.02f;
@@ -50,45 +48,36 @@ public class Particle {
         }
     }
 
-    // Simple constructor
     public Particle(float x, float y, float vx, float vy, float[] color, float size) {
         this(x, y, vx, vy, color, size, ParticleType.EXPLOSION);
     }
 
-    // Update particle
     public void update(float deltaTime) {
-        // Move particle
         position.x += velocity.x * deltaTime;
         position.y += velocity.y * deltaTime;
 
-        // Apply gravity for some particle types
         if (type == ParticleType.DEBRIS || type == ParticleType.SMOKE) {
             velocity.y += 0.2f * deltaTime;
         }
 
-        // Slow down over time (friction)
         velocity.x *= 0.98f;
         velocity.y *= 0.98f;
 
-        // Fade out
         life -= decay;
 
-        // Shrink over time
         if (type == ParticleType.SMOKE) {
-            size += 0.1f; // Smoke expands
+            size += 0.1f;
         } else {
-            size *= 0.97f; // Others shrink
+            size *= 0.97f;
         }
     }
 
-    // Render particle (NO TRANSPARENCY)
     public void render(GL gl) {
         if (life <= 0) return;
 
         gl.glPushMatrix();
         gl.glTranslatef(position.x, position.y, 0);
 
-        // Fade color based on life (darker = dying)
         float fadeFactor = life;
         gl.glColor3f(color[0] * fadeFactor, color[1] * fadeFactor, color[2] * fadeFactor);
 
@@ -113,7 +102,6 @@ public class Particle {
         gl.glPopMatrix();
     }
 
-    // Draw explosion particle (circle)
     private void drawExplosionParticle(GL gl) {
         gl.glBegin(GL.GL_TRIANGLE_FAN);
         gl.glVertex2f(0, 0);
@@ -126,7 +114,6 @@ public class Particle {
         gl.glEnd();
     }
 
-    // Draw spark particle (line streak)
     private void drawSparkParticle(GL gl) {
         gl.glLineWidth(size);
         gl.glBegin(GL.GL_LINES);
@@ -135,7 +122,6 @@ public class Particle {
         gl.glEnd();
     }
 
-    // Draw smoke particle (circle - gets darker as it fades)
     private void drawSmokeParticle(GL gl) {
         gl.glBegin(GL.GL_TRIANGLE_FAN);
         gl.glVertex2f(0, 0);
@@ -148,7 +134,6 @@ public class Particle {
         gl.glEnd();
     }
 
-    // Draw debris particle (small rectangle)
     private void drawDebrisParticle(GL gl) {
         float halfSize = size / 2;
         gl.glBegin(GL.GL_QUADS);
@@ -159,14 +144,12 @@ public class Particle {
         gl.glEnd();
     }
 
-    // Draw star particle (plus shape)
     private void drawStarParticle(GL gl) {
         gl.glPointSize(size);
         gl.glBegin(GL.GL_POINTS);
         gl.glVertex2f(0, 0);
         gl.glEnd();
 
-        // Add cross for twinkle effect
         if (life > 0.5f) {
             gl.glLineWidth(1.0f);
             gl.glBegin(GL.GL_LINES);
@@ -178,12 +161,10 @@ public class Particle {
         }
     }
 
-    // Check if particle is dead
     public boolean isDead() {
         return life <= 0;
     }
 
-    // Getters
     public Vector2D getPosition() {
         return position;
     }

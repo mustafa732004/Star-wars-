@@ -8,13 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameState {
-    // Game status
+
     private boolean running;
     private boolean paused;
     private boolean gameOver;
     private boolean victory;
 
-    // Score & progression
+
     private int score;
     private int highScore;
     private int level;
@@ -22,12 +22,10 @@ public class GameState {
     private int combo;
     private long comboTimer;
 
-    // Difficulty
     private float difficulty;
     private long lastObstacleSpawn;
     private long lastEnemySpawn;
 
-    // Game objects
     private Rocket rocket;
     private List<Bullet> bullets;
     private List<Enemy> enemies;
@@ -36,12 +34,10 @@ public class GameState {
     private List<Particle> particles;
     private Boss boss;
 
-    // Upgrades
     private float damageMultiplier;
     private float speedMultiplier;
     private float fireRateMultiplier;
 
-    // Temporary powerup timers
     private long rapidFireEndTime;
     private long spreadShotEndTime;
     private long laserEndTime;
@@ -56,7 +52,7 @@ public class GameState {
     private String username;
     private String username2;
 
-    // Constructor
+
     public GameState() {
         initialize(false , 1);
     }
@@ -82,13 +78,13 @@ public class GameState {
         rocket = new Rocket(rocketX, rocketY);
 
         switch (startDifficultyLevel) {
-            case 1: // Easy
+            case 1:
                 this.difficulty = 1.0f;
                 break;
-            case 2: // Medium
+            case 2:
                 this.difficulty = 1.5f;
                 break;
-            case 3: // Hard
+            case 3:
                 this.difficulty = 2.2f;
                 break;
             default:
@@ -224,7 +220,7 @@ public class GameState {
     }
 
     public void spawnBoss() {
-        float bossX = (Constants.WINDOW_WIDTH - 200) / 2;
+        float bossX = (Constants.WINDOW_WIDTH - 200) / 2; // تعديل الحجم عشان يناسب مع الكوكب
         float bossY = -200;
         boss = new Boss(bossX, bossY);
     }

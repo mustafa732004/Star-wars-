@@ -19,12 +19,12 @@ public class ParticleSystem {
     }
 
     public void update(float deltaTime) {
-        // Update all particles
+
         for (int i = 0; i < particles.size(); i++) {
             particles.get(i).update(deltaTime);
         }
 
-        // Remove dead particles (backwards)
+
         for (int i = particles.size() - 1; i >= 0; i--) {
             if (particles.get(i).isDead()) {
                 particles.remove(i);
@@ -109,12 +109,6 @@ public class ParticleSystem {
         createSparks(x, y, 4);
     }
 
-//    public void createLargeExplosion(float x, float y, float[] color) {
-//        createExplosion(x, y, color, 30);
-//        createSparks(x, y, 15);
-//        createSmoke(x, y, 10);
-//        createDebris(x, y, color, 12);
-//    }
 
     public void createBossExplosion(float x, float y) {
         float[][] colors = {

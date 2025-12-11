@@ -53,7 +53,7 @@ public class Bullet extends GameObject {
         this.fromEnemy = false;
         this.bulletType = bulletType;
 
-        // Laser settings
+
         if (bulletType.equals("laser")) {
             this.color = new float[]{0.0f, 1.0f, 1.0f}; // Cyan
             this.width = 4;
@@ -141,7 +141,6 @@ public class Bullet extends GameObject {
     }
 
     public boolean isOffScreen(int sw, int sh) {
-        // إصلاح الخطأ السابق: استخدام position.y
         return position.y > sh || position.y < -height;
     }
 

@@ -2,45 +2,44 @@ package RocketGame.Util;
 
 public class Constants {
 
-    // Window settings
+
     public static final int WINDOW_WIDTH = 800;
     public static final int WINDOW_HEIGHT = 600;
     public static final String WINDOW_TITLE = "Epic Rocket Game";
     public static final int FPS = 30;
 
-    // Game settings
+
     public static final int INITIAL_LIVES = 3;
     public static final int ROCKET_MAX_HEALTH = 100;
     public static final int ROCKET_MAX_SHIELD = 100;
 
-    // Physics - INCREASED SPEEDS FOR VISIBILITY
-    public static final float ROCKET_SPEED = 8.0f;      // Player movement
-    public static final float BULLET_SPEED = 10.0f;     // Bullet speed
-    public static final float ENEMY_BASE_SPEED = 4.0f;  // BASE SPEED (increased from 3.0f)
+    public static final float ROCKET_SPEED = 8.0f;
+    public static final float BULLET_SPEED = 10.0f;
+    public static final float ENEMY_BASE_SPEED = 4.0f;
 
-    // Spawning - MORE FREQUENT
-    public static final int OBSTACLE_SPAWN_INTERVAL = 500; // Reduced from 1500ms
-    public static final float POWERUP_SPAWN_CHANCE = 0.002f; // Increased from 0.001f
 
-    // Scoring
+    public static final int OBSTACLE_SPAWN_INTERVAL = 500;
+    public static final float POWERUP_SPAWN_CHANCE = 0.002f;
+
+
     public static final int SCORE_OBSTACLE_DODGE = 5;
     public static final int SCORE_OBSTACLE_DESTROY = 25;
     public static final int SCORE_ENEMY_DESTROY = 25;
     public static final int SCORE_BOSS_DESTROY = 1500;
     public static final int SCORE_COIN = 5;
 
-    // Boss
+
     public static final int BOSS_SPAWN_LEVEL = 3;
     public static final int BOSS_HEALTH = 500;
 
-    // Colors (RGB 0-1)
+
     public static final float[] COLOR_ROCKET = {1.0f, 0.27f, 0.27f};
     public static final float[] COLOR_BULLET = {0.0f, 1.0f, 0.0f};
     public static final float[] COLOR_ENEMY = {0.67f, 0.27f, 0.67f};
     public static final float[] COLOR_BOSS = {1.0f, 0.0f, 0.0f};
     public static final float[] COLOR_SHIELD = {0.27f, 0.67f, 1.0f};
 
-    // Dimensions
+
     public static final int ROCKET_WIDTH = 50;
     public static final int ROCKET_HEIGHT = 80;
     public static final int BULLET_WIDTH = 6;
