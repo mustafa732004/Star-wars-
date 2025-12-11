@@ -7,6 +7,13 @@ import java.util.List;
 public class ParticleSystem {
     private final List<Particle> particles;
 
+    public void createLargeExplosion(float x, float y, float[] color) {
+        createExplosion(x, y, color, 30);
+        createSparks(x, y, 15);
+        createSmoke(x, y, 10);
+        createDebris(x, y, color, 12);
+    }
+
     public ParticleSystem() {
         this.particles = new ArrayList<>();
     }
@@ -25,7 +32,6 @@ public class ParticleSystem {
         }
     }
 
-    // Render all particles (SIMPLE - NO BLENDING)
     public void render(GL gl) {
         for (int i = 0; i < particles.size(); i++) {
             particles.get(i).render(gl);
@@ -103,12 +109,12 @@ public class ParticleSystem {
         createSparks(x, y, 4);
     }
 
-    public void createLargeExplosion(float x, float y, float[] color) {
-        createExplosion(x, y, color, 30);
-        createSparks(x, y, 15);
-        createSmoke(x, y, 10);
-        createDebris(x, y, color, 12);
-    }
+//    public void createLargeExplosion(float x, float y, float[] color) {
+//        createExplosion(x, y, color, 30);
+//        createSparks(x, y, 15);
+//        createSmoke(x, y, 10);
+//        createDebris(x, y, color, 12);
+//    }
 
     public void createBossExplosion(float x, float y) {
         float[][] colors = {

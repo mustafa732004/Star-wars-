@@ -13,41 +13,55 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.IOException;
 
+import javax.swing.JOptionPane;
+
 public class Home extends AnimListener implements MouseListener {
 
     private RocketGame game;
 
-    // ترتيب الصور: start.png, instructions.png, exit.png, background.png, single.png, multi.png, back.png, howtoplay.png
-    String textureNames[] = {"start.png", "instructions.png", "exit.png", "background.png", "single.png", "multi.png", "back.png", "howtoplay.png"};
+    String textureNames[] = {"start.png", "instructions.png","exit.png","single.png","multi.png","howtoplay.png","easy.png","medium.png","hard.png","back.png","ai.png", "background.png"};
     TextureReader.Texture texture[] = new TextureReader.Texture[textureNames.length];
     int textures[] = new int[textureNames.length];
 
-    // إحداثيات الأزرار في الصفحة الرئيسية
-    int startX = Constants.WINDOW_WIDTH / 2 - 100; // 300
-    int startY = 220;
-
-    int helpX = Constants.WINDOW_WIDTH / 2 - 100;
-    int helpY = 300;
-
-    int exitX = Constants.WINDOW_WIDTH / 2 - 100;
-    int exitY = 380;
-
-    // إحداثيات الأزرار في قائمة اللاعبين
-    int singleX = Constants.WINDOW_WIDTH / 2 - 100;
-    int singleY = 200;
-    int multiX = Constants.WINDOW_WIDTH / 2 - 100;
-    int multiY = 280;
-
-    // زر العودة في صفحة التعليمات وقائمة اللاعبين
-    int backX = 50;
-    int backY = Constants.WINDOW_HEIGHT - 80;
-
+    int startX = 300;
+    int startY = 200;
     int btnWidth = 200;
     int btnHeight = 60;
-    int btnSpacing = 20; // مسافة بين الأزرار
+
+    int helpX = 300;
+    int helpY = 280;
+
+    int exitX = 300;
+    int exitY = 360;
+
+    int singleX = 300;
+    int singleY = 300;
+
+    int multiX = 300;
+    int multiY = 220;
+
+    int easyX = 300;
+    int easyY = 220;
+
+    int mediumX = 300;
+    int mediumY = 300;
+
+    int hardX = 300;
+    int hardY = 380;
+
+    int backX = 300;
+    int backY = 460;
+    int helpBackX = 300; int helpBackY = 500;
+
+    int aiX = 300;
+    int aiY = 380;
+
+    boolean isLevelSelection = false;
+    int selectedDifficulty = 1;
 
     boolean showHelp = false;
-    boolean showPlayerSelection = false;  // صفحة اختيار نوع اللعبة
+
+    boolean isSelectionMode = false;
 
     public Home(RocketGame game) {
         this.game = game;
@@ -58,7 +72,7 @@ public class Home extends AnimListener implements MouseListener {
     @Override
     public void init(GLAutoDrawable glAutoDrawable) {
         GL gl = glAutoDrawable.getGL();
-        gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
         gl.glMatrixMode(GL.GL_PROJECTION);
         gl.glLoadIdentity();
@@ -93,30 +107,36 @@ public class Home extends AnimListener implements MouseListener {
     @Override
     public void display(GLAutoDrawable glAutoDrawable) {
         GL gl = glAutoDrawable.getGL();
+
+        gl.glEnable(GL.GL_TEXTURE_2D);
+
         gl.glClear(GL.GL_COLOR_BUFFER_BIT);
         gl.glLoadIdentity();
 
-        // رسم الخلفية
-        drawTexture(gl, 3, 0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+        drawTexture(gl, textureNames.length - 1, 0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 
-        if (showHelp) {
-            // شاشة التعليمات
-            drawTexture(gl, 7, 0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT); // howtoplay.png
-            drawTexture(gl, 6, backX, backY, btnWidth, btnHeight); // back.png
-        } else if (showPlayerSelection) {
-            // شاشة اختيار نوع اللعبة
-            drawTexture(gl, 4, singleX, singleY, btnWidth, btnHeight); // single.png
-            drawTexture(gl, 5, multiX, multiY, btnWidth, btnHeight); // multi.png
-            drawTexture(gl, 6, backX, backY, btnWidth, btnHeight); // back.png
-        } else {
-            // الصفحة الرئيسية - الأزرار متناسقة مع بعض
-            drawTexture(gl, 0, startX, startY, btnWidth, btnHeight);        // Start
-            drawTexture(gl, 1, helpX, helpY, btnWidth, btnHeight);          // Instructions
-            drawTexture(gl, 2, exitX, exitY, btnWidth, btnHeight);          // Exit
+        if (!showHelp && !isSelectionMode && !isLevelSelection) {
+            drawTexture(gl, 0, startX, startY, btnWidth, btnHeight);
+
+            drawTexture(gl, 1, helpX, helpY, btnWidth, btnHeight);
+
+            drawTexture(gl , 2 , exitX, exitY, btnWidth, btnHeight);
+
+        } else if (isLevelSelection) {
+            drawTexture(gl, 6, easyX, easyY, btnWidth, btnHeight);
+            drawTexture(gl, 7, mediumX, mediumY, btnWidth, btnHeight);
+            drawTexture(gl, 8, hardX, hardY, btnWidth, btnHeight);
+            drawTexture(gl, 9, backX, backY, btnWidth, btnHeight);
+        } else if (isSelectionMode) {
+            drawTexture(gl, 3, singleX, singleY, btnWidth, btnHeight);
+            drawTexture(gl, 4, multiX, multiY, btnWidth, btnHeight);
+            drawTexture(gl, 9, backX, backY, btnWidth, btnHeight);
+            drawTexture(gl, 10, aiX, aiY, btnWidth, btnHeight);
+        }else {
+            drawTexture(gl , 5 , 0 , 0 , 800, 600);
         }
     }
 
-    // دالة مساعدة لرسم الصور بالإحداثيات
     public void drawTexture(GL gl, int textureIndex, float x, float y, float width, float height){
         gl.glBindTexture(GL.GL_TEXTURE_2D, textures[textureIndex]);
 
@@ -147,52 +167,85 @@ public class Home extends AnimListener implements MouseListener {
         int mx = e.getX();
         int my = e.getY();
 
-        if (showHelp) {
-            // زر العودة في شاشة التعليمات
+        boolean backClicked = false;
+        if (isLevelSelection || isSelectionMode) {
             if (mx >= backX && mx <= backX + btnWidth && my >= backY && my <= backY + btnHeight) {
-                System.out.println("Back Clicked from Instructions!");
-                showHelp = false;
+                backClicked = true;
             }
-        } else if (showPlayerSelection) {
-            // زر Single Player
+        } else if (showHelp) {
+            if (mx >= helpBackX && mx <= helpBackX + btnWidth && my >= helpBackY && my <= helpBackY + btnHeight) {
+                backClicked = true;
+            }
+        }
+
+        if (backClicked) {
+            isLevelSelection = false;
+            isSelectionMode = false;
+            showHelp = false;
+            return;
+        }
+
+        if (isSelectionMode){
             if (mx >= singleX && mx <= singleX + btnWidth && my >= singleY && my <= singleY + btnHeight) {
-                System.out.println("Single Player Clicked!");
+                System.out.println("Single Player Selected!");
+                String name = JOptionPane.showInputDialog(null, "Enter Username:");
+                if (name == null || name.trim().isEmpty()) name = "Player 1";
+
                 if (game != null) {
-                    game.startGame(false); // Single player
+                    game.startGame(false , false , selectedDifficulty , name , null);
                 }
             }
 
-            // زر Multi Player
             if (mx >= multiX && mx <= multiX + btnWidth && my >= multiY && my <= multiY + btnHeight) {
-                System.out.println("Multi Player Clicked!");
+                System.out.println("Multi Player Selected!");
+                String name = JOptionPane.showInputDialog(null, "Enter Username:");
+                if (name == null || name.trim().isEmpty()) name = "Player 1";
+
+                String name2 = JOptionPane.showInputDialog(null, "Enter Username2:");
+                if (name2 == null || name.trim().isEmpty()) name = "Player 2";
                 if (game != null) {
-                    game.startGame(true); // Multi player
+                    game.startGame(true , false ,  selectedDifficulty , name , name2);
                 }
             }
-
-            // زر العودة
-            if (mx >= backX && mx <= backX + btnWidth && my >= backY && my <= backY + btnHeight) {
-                System.out.println("Back Clicked from Player Selection!");
-                showPlayerSelection = false;
+            if (mx >= aiX && mx <= aiX + btnWidth && my >= 360 && my <= 360 + btnHeight) {
+                System.out.println("AI Mode Selected!");
+                String name = JOptionPane.showInputDialog(null, "Enter Username:");
+                if (name == null || name.trim().isEmpty()) name = "Player 1";
+                if (game != null) game.startGame(true, true, selectedDifficulty , name , "AI");
             }
-        } else {
-            // Start Game
+        }else if (isLevelSelection) {
+            if (mx >= easyX && mx <= easyX + btnWidth && my >= easyY && my <= easyY + btnHeight) {
+                selectedDifficulty = 1;
+                isLevelSelection = false;
+                isSelectionMode = true;
+            }
+            if (mx >= mediumX && mx <= mediumX + btnWidth && my >= mediumY && my <= mediumY + btnHeight) {
+                selectedDifficulty = 2;
+                isLevelSelection = false;
+                isSelectionMode = true;
+            }
+            if (mx >= hardX && mx <= hardX + btnWidth && my >= hardY && my <= hardY + btnHeight) {
+                selectedDifficulty = 3;
+                isLevelSelection = false;
+                isSelectionMode = true;
+            }
+        }else if (!showHelp) {
             if (mx >= startX && mx <= startX + btnWidth && my >= startY && my <= startY + btnHeight) {
                 System.out.println("Start Game Clicked!");
-                showPlayerSelection = true;
+                isSelectionMode = false;
+                isLevelSelection = true;
             }
 
-            // Help
             if (mx >= helpX && mx <= helpX + btnWidth && my >= helpY && my <= helpY + btnHeight) {
                 System.out.println("Help Clicked!");
                 showHelp = true;
             }
-
-            // Exit
             if (mx >= exitX && mx <= exitX + btnWidth && my >= exitY && my <= exitY + btnHeight){
                 System.out.println("Exit Game Clicked!");
                 System.exit(0);
             }
+        } else {
+            showHelp = false;
         }
     }
 
@@ -206,11 +259,17 @@ public class Home extends AnimListener implements MouseListener {
     public void mouseExited(MouseEvent e) {}
 
     @Override
-    public void keyTyped(KeyEvent e) {}
+    public void keyTyped(KeyEvent e) {
+
+    }
 
     @Override
-    public void keyPressed(KeyEvent e) {}
+    public void keyPressed(KeyEvent e) {
+
+    }
 
     @Override
-    public void keyReleased(KeyEvent e) {}
+    public void keyReleased(KeyEvent e) {
+
+    }
 }

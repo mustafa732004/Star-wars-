@@ -8,27 +8,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameState {
+    // Game status
     private boolean running;
     private boolean paused;
     private boolean gameOver;
     private boolean victory;
-    private boolean twoPlayerMode;
 
+    // Score & progression
     private int score;
-    private int scorePlayer2;
     private int highScore;
     private int level;
     private int lives;
-    private int livesPlayer2;
     private int combo;
     private long comboTimer;
 
+    // Difficulty
     private float difficulty;
     private long lastObstacleSpawn;
     private long lastEnemySpawn;
 
+    // Game objects
     private Rocket rocket;
-    private Rocket rocket2;
     private List<Bullet> bullets;
     private List<Enemy> enemies;
     private List<Obstacle> obstacles;
@@ -36,10 +36,12 @@ public class GameState {
     private List<Particle> particles;
     private Boss boss;
 
+    // Upgrades
     private float damageMultiplier;
     private float speedMultiplier;
     private float fireRateMultiplier;
 
+    // Temporary powerup timers
     private long rapidFireEndTime;
     private long spreadShotEndTime;
     private long laserEndTime;
@@ -47,14 +49,20 @@ public class GameState {
 
     private boolean multiplayer;
 
+    private Rocket rocket2;
+    private int scorePlayer2;
+    private int livesPlayer2;
+
+    private String username;
+    private String username2;
+
+    // Constructor
     public GameState() {
-        initialize(false, false);
+        initialize(false , 1);
     }
 
-    public void initialize(boolean isMultiplayer, boolean isTwoPlayer) {
+    public void initialize(boolean isMultiplayer , int startDifficultyLevel) {
         this.multiplayer = isMultiplayer;
-        this.twoPlayerMode = isTwoPlayer;
-
         running = true;
         paused = false;
         gameOver = false;
@@ -73,8 +81,22 @@ public class GameState {
         float rocketY = Constants.WINDOW_HEIGHT - 100;
         rocket = new Rocket(rocketX, rocketY);
 
-        if (twoPlayerMode) {
-            rocket2 = new Rocket(rocketX - 100, rocketY);
+        switch (startDifficultyLevel) {
+            case 1: // Easy
+                this.difficulty = 1.0f;
+                break;
+            case 2: // Medium
+                this.difficulty = 1.5f;
+                break;
+            case 3: // Hard
+                this.difficulty = 2.2f;
+                break;
+            default:
+                this.difficulty = 1.0f;
+        }
+
+        if (isMultiplayer) {
+            rocket2 = new Rocket(rocketX + 80, rocketY , "Assets/s2.png");
         } else {
             rocket2 = null;
         }
@@ -100,23 +122,55 @@ public class GameState {
 
         loadHighScore();
     }
+    public Rocket getRocket2() { return rocket2; }
 
-    public void reset() {
-        initialize(multiplayer, twoPlayerMode);
+    public int getScorePlayer2() { return scorePlayer2; }
+    public void addScorePlayer2(int points) { this.scorePlayer2 += points; }
+
+    public int getLivesPlayer2() { return livesPlayer2; }
+    public void loseLifePlayer2() {
+        livesPlayer2--;
+        if (livesPlayer2 <= 0) {
+            livesPlayer2 = 0;
+            setGameOver(true);
+        }
+    }
+
+    public void reset(int startDifficultyLevel) {
+        initialize(multiplayer , startDifficultyLevel);
     }
 
     private void loadHighScore() {
-        if (highScore == 0) {
-            highScore = 0;
+        try {
+            java.io.File file = new java.io.File("highscore.txt");
+            if (file.exists()) {
+                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file));
+                String line = reader.readLine();
+                if (line != null) {
+                    highScore = Integer.parseInt(line);
+                }
+                reader.close();
+            }
+        } catch (Exception e) {
+            System.err.println("Could not load high score.");
         }
     }
 
     private void saveHighScore() {
+        try {
+            java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("highscore.txt"));
+            writer.write(String.valueOf(highScore));
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void updateHighScore() {
-        if (score > highScore) {
-            highScore = score;
+        int currentTotalScore = score + scorePlayer2;
+
+        if (currentTotalScore > highScore) {
+            highScore = currentTotalScore;
             saveHighScore();
         }
     }
@@ -164,8 +218,6 @@ public class GameState {
 
     public void levelUp() {
         level++;
-        difficulty = 1.0f + (level - 1) * 0.3f;
-
         if (level == Constants.BOSS_SPAWN_LEVEL) {
             spawnBoss();
         }
@@ -176,36 +228,6 @@ public class GameState {
         float bossY = -200;
         boss = new Boss(bossX, bossY);
     }
-
-    // Getters and Setters
-    public boolean isTwoPlayerMode() { return twoPlayerMode; }
-    public void setTwoPlayerMode(boolean twoPlayerMode) { this.twoPlayerMode = twoPlayerMode; }
-
-    public int getScorePlayer2() { return scorePlayer2; }
-    public void setScorePlayer2(int score) { this.scorePlayer2 = score; }
-    public void addScorePlayer2(int points) {
-        int bonusPoints = points;
-        if (combo > 1) {
-            bonusPoints = points * combo;
-        }
-        this.scorePlayer2 += bonusPoints;
-    }
-
-    public int getLivesPlayer2() { return livesPlayer2; }
-    public void setLivesPlayer2(int lives) { this.livesPlayer2 = lives; }
-    public void addLifePlayer2() { livesPlayer2++; }
-    public void loseLifePlayer2() {
-        livesPlayer2--;
-        if (livesPlayer2 <= 0) {
-            livesPlayer2 = 0;
-            if (lives <= 0) {
-                setGameOver(true);
-            }
-        }
-    }
-
-    public Rocket getRocket2() { return rocket2; }
-    public void setRocket2(Rocket rocket2) { this.rocket2 = rocket2; }
 
     public boolean isVictory() { return victory; }
     public void setVictory(boolean victory) { this.victory = victory; }
@@ -227,11 +249,8 @@ public class GameState {
     public int getScore() { return score; }
     public void setScore(int score) { this.score = score; }
     public void addScore(int points) {
-        int bonusPoints = points;
-        if (combo > 1) {
-            bonusPoints = points * combo;
-        }
-        this.score += bonusPoints;
+        
+        this.score += points;
     }
 
     public int getHighScore() { return highScore; }
@@ -249,9 +268,7 @@ public class GameState {
         lives--;
         if (lives <= 0) {
             lives = 0;
-            if (livesPlayer2 <= 0 || !twoPlayerMode) {
-                setGameOver(true);
-            }
+            setGameOver(true);
         }
     }
 
@@ -323,4 +340,9 @@ public class GameState {
         enemies.clear();
         boss = null;
     }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getUsername2() { return username2; }
+    public void setUsername2(String username2) { this.username2 = username2; }
 }

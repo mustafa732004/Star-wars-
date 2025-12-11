@@ -14,28 +14,11 @@ import java.awt.Font;
 public class GameRenderer implements GLEventListener {
     private GameEngine gameEngine;
     private TextRenderer textRenderer;
-    private TextRenderer upgradeTextRenderer;
-    private boolean initialized = false;
 
-    // ثوابت الأزرار
     public static final int BUTTON_WIDTH = 200;
     public static final int BUTTON_HEIGHT = 50;
-    public static final int BUTTON_SPACING = 70;
-
-    // إحداثيات الأزرار الثلاثة للمستوى الثالث
-    public static final int PLAY_AGAIN_BTN_X = Constants.WINDOW_WIDTH / 2 - BUTTON_WIDTH / 2;
-    public static final int PLAY_AGAIN_BTN_Y = 280;
-
-    public static final int HOME_BTN_X = Constants.WINDOW_WIDTH / 2 - BUTTON_WIDTH / 2;
-    public static final int HOME_BTN_Y = 350;
-
-    public static final int EXIT_BTN_X = Constants.WINDOW_WIDTH / 2 - BUTTON_WIDTH / 2;
-    public static final int EXIT_BTN_Y = 420;
-
-    // الأزرار القديمة (للسابق مع Game Over العادي)
     public static final int RESTART_BTN_X = Constants.WINDOW_WIDTH / 2 - BUTTON_WIDTH / 2;
-    public static final int RESTART_BTN_Y = 280 + 70; // تم تعديله في drawTwoButtons
-
+    public static final int RESTART_BTN_Y = 350;
     public static final int MENU_BTN_X = Constants.WINDOW_WIDTH / 2 - BUTTON_WIDTH / 2;
     public static final int MENU_BTN_Y = 420;
 
@@ -44,18 +27,23 @@ public class GameRenderer implements GLEventListener {
     private float[] starBrightness;
     private static final int STAR_COUNT = 100;
 
+    public static final int PAUSE_BTN_X = Constants.WINDOW_WIDTH - 60;
+    public static final int PAUSE_BTN_Y = 20;
+    public static final int PAUSE_BTN_SIZE = 40;
+
+    public static final int RESUME_BTN_X = Constants.WINDOW_WIDTH / 2 - 100;
+    public static final int RESUME_BTN_Y = 250;
+    public static final int EXIT_MENU_BTN_X = Constants.WINDOW_WIDTH / 2 - 100;
+    public static final int EXIT_MENU_BTN_Y = 320;
+
     public GameRenderer(GameEngine gameEngine) {
         this.gameEngine = gameEngine;
         initializeStars();
-        // تهيئة TextRenderer في الكونستركتور
-        textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 24));
-        upgradeTextRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 20));
     }
 
     @Override
     public void init(GLAutoDrawable drawable) {
         GL gl = drawable.getGL();
-        gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         gl.glMatrixMode(GL.GL_PROJECTION);
         gl.glLoadIdentity();
         gl.glOrtho(0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT, 0, -1, 1);
@@ -64,44 +52,32 @@ public class GameRenderer implements GLEventListener {
         gl.glEnable(GL.GL_TEXTURE_2D);
         gl.glEnable(GL.GL_BLEND);
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-
-        // تأكد من تهيئة TextRenderer إذا لم يتم ذلك
-        if (textRenderer == null) {
-            textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 24));
-        }
-        if (upgradeTextRenderer == null) {
-            upgradeTextRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 20));
-        }
-
-        initialized = true;
+        textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 24));
     }
 
     @Override
     public void display(GLAutoDrawable drawable) {
         GL gl = drawable.getGL();
-
-        // تأكد من تهيئة OpenGL إذا لم يتم ذلك
-        if (!initialized) {
-            init(drawable);
-        }
-
         gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         gl.glClear(GL.GL_COLOR_BUFFER_BIT);
         gl.glLoadIdentity();
-
-        // تأكد من وجود gameEngine
-        if (gameEngine == null) {
-            System.err.println("GameEngine is null!");
-            return;
-        }
 
         gameEngine.update();
 
         GameState gameState = gameEngine.getGameState();
         ParticleSystem particleSystem = gameEngine.getParticleSystem();
 
+        gameState.getRocket().render(gl);
+
+        if (gameState.getRocket2() != null) {
+            gameState.getRocket2().render(gl);
+        }
+
         drawStarField(gl);
+
+        gl.glDisable(GL.GL_TEXTURE_2D);
         particleSystem.render(gl);
+        gl.glEnable(GL.GL_TEXTURE_2D);
 
         if (!gameState.isGameOver()) {
             for (int i = 0; i < gameState.getPowerups().size(); i++) gameState.getPowerups().get(i).render(gl);
@@ -109,8 +85,8 @@ public class GameRenderer implements GLEventListener {
             for (int i = 0; i < gameState.getEnemies().size(); i++) gameState.getEnemies().get(i).render(gl);
             if (gameState.getBoss() != null) gameState.getBoss().render(gl);
             for (int i = 0; i < gameState.getBullets().size(); i++) gameState.getBullets().get(i).render(gl);
-
             gameState.getRocket().render(gl);
+
             if (gameState.getRocket2() != null) {
                 gameState.getRocket2().render(gl);
             }
@@ -118,78 +94,12 @@ public class GameRenderer implements GLEventListener {
 
         drawHUD(gl, gameState);
 
-        if (gameState.isPaused()) {
-            drawPauseScreen(gl);
-        }
-
-        // التعديل: التحقق إذا كانت شاشة انتهاء المستوى الثالث أم لا
-        if (gameState.isGameOver() && gameEngine.isLevelThreeComplete()) {
-            drawLevelThreeCompleteScreen(gl);
-        } else if (gameState.isGameOver()) {
-            drawGameOverScreen(gl, gameState);
-        }
-
-        // قائمة الترقية تظهر فقط من المستوى 2 فما فوق
-        if (gameEngine.isShowingUpgradeMenu()) {
-            drawUpgradeMenu(gl);
-        }
-
-        // عرض رسالة انتقال المستوى
-        if (gameEngine.isLevelTransitioning()) {
-            drawLevelTransition(gl, gameState);
-        }
+        if (gameState.isPaused()) drawPauseScreen(gl);
+        if (gameState.isGameOver()) drawGameOverScreen(gl, gameState);
+        if (gameEngine.isShowingUpgradeMenu()) drawUpgradeMenu(gl);
+        if (gameEngine.isLevelTransitioning()) drawLevelTransition(gl, gameState);
 
         gl.glFlush();
-    }
-
-    private void drawLevelThreeCompleteScreen(GL gl) {
-        // خلفية شفافة فقط
-        gl.glDisable(GL.GL_TEXTURE_2D);
-        gl.glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
-        gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(0, 0); gl.glVertex2f(Constants.WINDOW_WIDTH, 0);
-        gl.glVertex2f(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT); gl.glVertex2f(0, Constants.WINDOW_HEIGHT);
-        gl.glEnd();
-        gl.glEnable(GL.GL_TEXTURE_2D);
-
-        // عرض الأزرار الثلاثة فقط بدون أي نصوص
-        drawThreeButtons(gl);
-    }
-
-    private void drawThreeButtons(GL gl) {
-        gl.glDisable(GL.GL_TEXTURE_2D);
-
-        // 1. زر Play Again (أخضر)
-        gl.glColor3f(0.2f, 0.8f, 0.2f);
-        gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(PLAY_AGAIN_BTN_X, PLAY_AGAIN_BTN_Y);
-        gl.glVertex2f(PLAY_AGAIN_BTN_X + BUTTON_WIDTH, PLAY_AGAIN_BTN_Y);
-        gl.glVertex2f(PLAY_AGAIN_BTN_X + BUTTON_WIDTH, PLAY_AGAIN_BTN_Y + BUTTON_HEIGHT);
-        gl.glVertex2f(PLAY_AGAIN_BTN_X, PLAY_AGAIN_BTN_Y + BUTTON_HEIGHT);
-        gl.glEnd();
-        drawSimpleText(gl, "PLAY AGAIN", PLAY_AGAIN_BTN_X + 40, PLAY_AGAIN_BTN_Y + 35);
-
-        // 2. زر Back to Home (أزرق)
-        gl.glColor3f(0.2f, 0.2f, 0.8f);
-        gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(HOME_BTN_X, HOME_BTN_Y);
-        gl.glVertex2f(HOME_BTN_X + BUTTON_WIDTH, HOME_BTN_Y);
-        gl.glVertex2f(HOME_BTN_X + BUTTON_WIDTH, HOME_BTN_Y + BUTTON_HEIGHT);
-        gl.glVertex2f(HOME_BTN_X, HOME_BTN_Y + BUTTON_HEIGHT);
-        gl.glEnd();
-        drawSimpleText(gl, "BACK TO HOME", HOME_BTN_X + 30, HOME_BTN_Y + 35);
-
-        // 3. زر Exit Game (أحمر)
-        gl.glColor3f(0.8f, 0.2f, 0.2f);
-        gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(EXIT_BTN_X, EXIT_BTN_Y);
-        gl.glVertex2f(EXIT_BTN_X + BUTTON_WIDTH, EXIT_BTN_Y);
-        gl.glVertex2f(EXIT_BTN_X + BUTTON_WIDTH, EXIT_BTN_Y + BUTTON_HEIGHT);
-        gl.glVertex2f(EXIT_BTN_X, EXIT_BTN_Y + BUTTON_HEIGHT);
-        gl.glEnd();
-        drawSimpleText(gl, "EXIT GAME", EXIT_BTN_X + 45, EXIT_BTN_Y + 35);
-
-        gl.glEnable(GL.GL_TEXTURE_2D);
     }
 
     private void drawGameOverScreen(GL gl, GameState s) {
@@ -211,63 +121,47 @@ public class GameRenderer implements GLEventListener {
             c = new float[]{1.0f, 0.0f, 0.0f};
         }
 
-        // التحقق من textRenderer
-        if (textRenderer == null) {
-            textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 24));
-        }
-
         textRenderer.beginRendering(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
         textRenderer.setColor(c[0], c[1], c[2], 1.0f);
         textRenderer.draw(titleText, Constants.WINDOW_WIDTH / 2 - 180, 400);
         textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        textRenderer.draw("FINAL SCORE - Player 1: " + s.getScore(), Constants.WINDOW_WIDTH / 2 - 120, 350);
-        if (s.isTwoPlayerMode()) {
-            textRenderer.draw("FINAL SCORE - Player 2: " + s.getScorePlayer2(), Constants.WINDOW_WIDTH / 2 - 120, 320);
+
+
+        if (s.getRocket2() != null) {
+            String p1ScoreText = "P1 SCORE: " + s.getScore();
+            String p2ScoreText = "P2 SCORE: " + s.getScorePlayer2();
+
+            textRenderer.draw(p1ScoreText, Constants.WINDOW_WIDTH / 2 - 100, 350);
+            textRenderer.draw(p2ScoreText, Constants.WINDOW_WIDTH / 2 - 100, 310);
+        } else {
+            textRenderer.draw("FINAL SCORE: " + s.getScore(), Constants.WINDOW_WIDTH / 2 - 100, 350);
         }
+
         textRenderer.endRendering();
 
-        // عرض زرين فقط في حالة Game Over العادية
-        drawTwoButtons(gl);
-    }
-
-    private void drawTwoButtons(GL gl) {
         gl.glDisable(GL.GL_TEXTURE_2D);
-
-        // زر Play Again (أخضر)
         gl.glColor3f(0.2f, 0.8f, 0.2f);
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(RESTART_BTN_X, RESTART_BTN_Y);
-        gl.glVertex2f(RESTART_BTN_X + BUTTON_WIDTH, RESTART_BTN_Y);
-        gl.glVertex2f(RESTART_BTN_X + BUTTON_WIDTH, RESTART_BTN_Y + BUTTON_HEIGHT);
-        gl.glVertex2f(RESTART_BTN_X, RESTART_BTN_Y + BUTTON_HEIGHT);
+        gl.glVertex2f(RESTART_BTN_X, RESTART_BTN_Y); gl.glVertex2f(RESTART_BTN_X+BUTTON_WIDTH, RESTART_BTN_Y);
+        gl.glVertex2f(RESTART_BTN_X+BUTTON_WIDTH, RESTART_BTN_Y+BUTTON_HEIGHT); gl.glVertex2f(RESTART_BTN_X, RESTART_BTN_Y+BUTTON_HEIGHT);
         gl.glEnd();
         drawSimpleText(gl, "PLAY AGAIN", RESTART_BTN_X + 40, RESTART_BTN_Y + 35);
 
-        // زر Exit Game (أحمر)
         gl.glColor3f(0.8f, 0.2f, 0.2f);
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(MENU_BTN_X, MENU_BTN_Y);
-        gl.glVertex2f(MENU_BTN_X + BUTTON_WIDTH, MENU_BTN_Y);
-        gl.glVertex2f(MENU_BTN_X + BUTTON_WIDTH, MENU_BTN_Y + BUTTON_HEIGHT);
-        gl.glVertex2f(MENU_BTN_X, MENU_BTN_Y + BUTTON_HEIGHT);
+        gl.glVertex2f(MENU_BTN_X, MENU_BTN_Y); gl.glVertex2f(MENU_BTN_X+BUTTON_WIDTH, MENU_BTN_Y);
+        gl.glVertex2f(MENU_BTN_X+BUTTON_WIDTH, MENU_BTN_Y+BUTTON_HEIGHT); gl.glVertex2f(MENU_BTN_X, MENU_BTN_Y+BUTTON_HEIGHT);
         gl.glEnd();
         drawSimpleText(gl, "EXIT GAME", MENU_BTN_X + 45, MENU_BTN_Y + 35);
-
-        gl.glEnable(GL.GL_TEXTURE_2D);
     }
 
     private void drawSimpleText(GL gl, String text, float x, float y) {
-        // التحقق من textRenderer في كل مرة
-        if (textRenderer == null) {
-            textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 24));
-        }
-
+        if (textRenderer == null) textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 24));
         textRenderer.beginRendering(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
         textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
         textRenderer.draw(text, (int)x, (int)(Constants.WINDOW_HEIGHT - y));
         textRenderer.endRendering();
     }
-
     private void drawHeart(GL gl, float x, float y) {
         gl.glDisable(GL.GL_TEXTURE_2D);
         gl.glColor3f(1.0f, 0.2f, 0.2f);
@@ -278,7 +172,7 @@ public class GameRenderer implements GLEventListener {
         gl.glEnable(GL.GL_TEXTURE_2D);
     }
 
-    private void drawBlueHeart(GL gl, float x, float y) {
+    private void drawHeart2(GL gl, float x, float y) {
         gl.glDisable(GL.GL_TEXTURE_2D);
         gl.glColor3f(0.2f, 0.2f, 1.0f);
         gl.glBegin(GL.GL_TRIANGLES);
@@ -288,43 +182,52 @@ public class GameRenderer implements GLEventListener {
         gl.glEnable(GL.GL_TEXTURE_2D);
     }
 
-    private void drawHealthBar(GL gl, Rocket rocket, float x, float y, boolean isPlayer2) {
+    private void drawHealthBar(GL gl, Rocket rocket) {
         gl.glDisable(GL.GL_TEXTURE_2D);
-        float w = 150; float h = 8;
+        float barX = 10; float barY = 80; float w = 200; float h = 10;
         gl.glColor3f(0.5f, 0, 0);
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(x, y); gl.glVertex2f(x+w, y);
-        gl.glVertex2f(x+w, y+h); gl.glVertex2f(x, y+h);
+        gl.glVertex2f(barX, barY); gl.glVertex2f(barX+w, barY);
+        gl.glVertex2f(barX+w, barY+h); gl.glVertex2f(barX, barY+h);
         gl.glEnd();
-
-        if (isPlayer2) {
-            gl.glColor3f(0, 0, 1);
-        } else {
-            gl.glColor3f(1, 0, 0);
-        }
-
+        gl.glColor3f(1, 0, 0);
         float healthW = w * rocket.getHealthPercent();
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(x, y); gl.glVertex2f(x+healthW, y);
-        gl.glVertex2f(x+healthW, y+h); gl.glVertex2f(x, y+h);
+        gl.glVertex2f(barX, barY); gl.glVertex2f(barX+healthW, barY);
+        gl.glVertex2f(barX+healthW, barY+h); gl.glVertex2f(barX, barY+h);
         gl.glEnd();
         gl.glEnable(GL.GL_TEXTURE_2D);
     }
-
-    private void drawShieldBar(GL gl, Rocket rocket, float x, float y) {
-        if(rocket.getShield() <= 0) return;
+    private void drawHealthBar(GL gl, Rocket rocket, float x, float y) {
         gl.glDisable(GL.GL_TEXTURE_2D);
-        float w = 150; float h = 8;
+        float barX = x; float barY = y; float w = 200; float h = 10;
         gl.glColor3f(0, 0, 0.5f);
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(x, y); gl.glVertex2f(x+w, y);
-        gl.glVertex2f(x+w, y+h); gl.glVertex2f(x, y+h);
+        gl.glVertex2f(barX, barY); gl.glVertex2f(barX+w, barY);
+        gl.glVertex2f(barX+w, barY+h); gl.glVertex2f(barX, barY+h);
+        gl.glEnd();
+        gl.glColor3f(0, 0, 1);
+        float healthW = w * rocket.getHealthPercent();
+        gl.glBegin(GL.GL_QUADS);
+        gl.glVertex2f(barX, barY); gl.glVertex2f(barX+healthW, barY);
+        gl.glVertex2f(barX+healthW, barY+h); gl.glVertex2f(barX, barY+h);
+        gl.glEnd();
+        gl.glEnable(GL.GL_TEXTURE_2D);
+    }
+    private void drawShieldBar(GL gl, Rocket rocket) {
+        if(rocket.getShield() <= 0) return;
+        gl.glDisable(GL.GL_TEXTURE_2D);
+        float barX = 10; float barY = 100; float w = 200; float h = 10;
+        gl.glColor3f(0, 0, 0.5f);
+        gl.glBegin(GL.GL_QUADS);
+        gl.glVertex2f(barX, barY); gl.glVertex2f(barX+w, barY);
+        gl.glVertex2f(barX+w, barY+h); gl.glVertex2f(barX, barY+h);
         gl.glEnd();
         gl.glColor3f(0, 0.5f, 1);
         float shieldW = w * rocket.getShieldPercent();
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(x, y); gl.glVertex2f(x+shieldW, y);
-        gl.glVertex2f(x+shieldW, y+h); gl.glVertex2f(x, y+h);
+        gl.glVertex2f(barX, barY); gl.glVertex2f(barX+shieldW, barY);
+        gl.glVertex2f(barX+shieldW, barY+h); gl.glVertex2f(barX, barY+h);
         gl.glEnd();
         gl.glEnable(GL.GL_TEXTURE_2D);
     }
@@ -337,91 +240,21 @@ public class GameRenderer implements GLEventListener {
         gl.glVertex2f(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT); gl.glVertex2f(0, Constants.WINDOW_HEIGHT);
         gl.glEnd();
 
-        drawSimpleText(gl, "PAUSED", Constants.WINDOW_WIDTH/2 - 50, Constants.WINDOW_HEIGHT/2);
-        drawSimpleText(gl, "Press ESC to resume", Constants.WINDOW_WIDTH/2 - 100, Constants.WINDOW_HEIGHT/2 - 40);
-    }
-
-    private void drawUpgradeMenu(GL gl) {
-        // خلفية شفافة
-        gl.glDisable(GL.GL_TEXTURE_2D);
-        gl.glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+        gl.glColor3f(0.2f, 0.8f, 0.2f); // أخضر
         gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(0, 0); gl.glVertex2f(Constants.WINDOW_WIDTH, 0);
-        gl.glVertex2f(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT); gl.glVertex2f(0, Constants.WINDOW_HEIGHT);
+        gl.glVertex2f(RESUME_BTN_X, RESUME_BTN_Y);
+        gl.glVertex2f(RESUME_BTN_X + BUTTON_WIDTH, RESUME_BTN_Y);
+        gl.glVertex2f(RESUME_BTN_X + BUTTON_WIDTH, RESUME_BTN_Y + BUTTON_HEIGHT);
+        gl.glVertex2f(RESUME_BTN_X, RESUME_BTN_Y + BUTTON_HEIGHT);
         gl.glEnd();
 
-        // تأكد من تهيئة textRenderers
-        if (textRenderer == null) {
-            textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 24));
-        }
-        if (upgradeTextRenderer == null) {
-            upgradeTextRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 20));
-        }
-
-        // عنوان الترقية مع إظهار المستوى الحالي
-        textRenderer.beginRendering(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-        textRenderer.setColor(0.0f, 1.0f, 0.0f, 1.0f);
-        textRenderer.draw("LEVEL UP!", Constants.WINDOW_WIDTH/2 - 60, 400);
-        textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        textRenderer.draw("LEVEL " + (gameEngine.getGameState().getLevel()) + " COMPLETE!", Constants.WINDOW_WIDTH/2 - 120, 370);
-        textRenderer.draw("CHOOSE UPGRADE", Constants.WINDOW_WIDTH/2 - 100, 340);
-        textRenderer.endRendering();
-
-        // خيارات الترقية
-        String[] options = gameEngine.getUpgradeOptions();
-        int selected = gameEngine.getSelectedUpgrade();
-
-        upgradeTextRenderer.beginRendering(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-        for (int i = 0; i < options.length; i++) {
-            if (i == selected) {
-                upgradeTextRenderer.setColor(1.0f, 1.0f, 0.0f, 1.0f);
-                upgradeTextRenderer.draw("> " + options[i], Constants.WINDOW_WIDTH/2 - 80, 280 - i*40);
-            } else {
-                upgradeTextRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-                upgradeTextRenderer.draw("  " + options[i], Constants.WINDOW_WIDTH/2 - 80, 280 - i*40);
-            }
-        }
-        upgradeTextRenderer.setColor(0.8f, 0.8f, 0.8f, 1.0f);
-        upgradeTextRenderer.draw("Press SPACE or ENTER to select", Constants.WINDOW_WIDTH/2 - 140, 150);
-        upgradeTextRenderer.endRendering();
+        drawSimpleText(gl, "GAME PAUSED", Constants.WINDOW_WIDTH / 2 - 80, 150);
+        drawSimpleText(gl, "RESUME", RESUME_BTN_X + 50, RESUME_BTN_Y + 35);
+        drawSimpleText(gl, "EXIT GAME", MENU_BTN_X + 35, MENU_BTN_Y + 35);
     }
 
-    private void drawLevelTransition(GL gl, GameState s) {
-        // خلفية شفافة
-        gl.glDisable(GL.GL_TEXTURE_2D);
-        gl.glColor4f(0.0f, 0.0f, 0.0f, 0.6f);
-        gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(0, 0); gl.glVertex2f(Constants.WINDOW_WIDTH, 0);
-        gl.glVertex2f(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT); gl.glVertex2f(0, Constants.WINDOW_HEIGHT);
-        gl.glEnd();
-        gl.glEnable(GL.GL_TEXTURE_2D);
-
-        if (textRenderer == null) {
-            textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 24));
-        }
-
-        textRenderer.beginRendering(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-
-        // رسالة خاصة للمستوى الأول
-        if (s.getLevel() == 1) {
-            textRenderer.setColor(0.0f, 1.0f, 1.0f, 1.0f);
-            textRenderer.draw("LEVEL 1 COMPLETE!", Constants.WINDOW_WIDTH/2 - 120, Constants.WINDOW_HEIGHT/2 + 40);
-            textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-            textRenderer.draw("GET READY FOR LEVEL 2!", Constants.WINDOW_WIDTH/2 - 140, Constants.WINDOW_HEIGHT/2);
-        }
-        // رسالة عامة للمستويات الأخرى
-        else {
-            textRenderer.setColor(0.0f, 1.0f, 1.0f, 1.0f);
-            textRenderer.draw("LEVEL " + s.getLevel() + " COMPLETE!",
-                    Constants.WINDOW_WIDTH/2 - 120, Constants.WINDOW_HEIGHT/2 + 40);
-            textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-            textRenderer.draw("PREPARING LEVEL " + (s.getLevel() + 1),
-                    Constants.WINDOW_WIDTH/2 - 130, Constants.WINDOW_HEIGHT/2);
-        }
-
-        textRenderer.endRendering();
-    }
-
+    private void drawUpgradeMenu(GL gl) { drawSimpleText(gl, "LEVEL UP! CHOOSE UPGRADE", 300, 200); }
+    private void drawLevelTransition(GL gl, GameState s) { drawSimpleText(gl, "LEVEL " + (s.getLevel() + 1), 350, 300); }
     private void drawStarField(GL gl) {
         gl.glDisable(GL.GL_TEXTURE_2D);
         gl.glPointSize(2.0f);
@@ -440,41 +273,46 @@ public class GameRenderer implements GLEventListener {
     }
 
     private void drawHUD(GL gl, GameState gameState) {
-        // التحقق من textRenderer
-        if (textRenderer == null) {
-            textRenderer = new TextRenderer(new Font("SansSerif", Font.BOLD, 24));
-        }
+        drawSimpleText(gl, "SCORE: " + gameState.getScore(), 10, 30);
+        textRenderer.draw("HIGH SCORE: " + gameState.getHighScore(), 280, Constants.WINDOW_HEIGHT - 80);
+        drawSimpleText(gl, "LIVES: " + gameState.getLives(), 10, 60);
 
-        // Player 1 info
-        drawSimpleText(gl, "P1 SCORE: " + gameState.getScore(), 10, 30);
-        drawSimpleText(gl, "P1 LIVES: " + gameState.getLives(), 10, 60);
-
-        for (int i = 0; i < gameState.getLives(); i++) {
-            drawHeart(gl, 120 + i * 25, 50);
-        }
-
-        drawHealthBar(gl, gameState.getRocket(), 10, 90, false);
-        drawShieldBar(gl, gameState.getRocket(), 10, 105);
-
-        // Player 2 info (if exists)
-        if (gameState.isTwoPlayerMode() && gameState.getRocket2() != null) {
-            drawSimpleText(gl, "P2 SCORE: " + gameState.getScorePlayer2(), Constants.WINDOW_WIDTH - 200, 30);
-            drawSimpleText(gl, "P2 LIVES: " + gameState.getLivesPlayer2(), Constants.WINDOW_WIDTH - 200, 60);
-
-            for (int i = 0; i < gameState.getLivesPlayer2(); i++) {
-                drawBlueHeart(gl, Constants.WINDOW_WIDTH - 80 + i * 25, 50);
-            }
-
-            drawHealthBar(gl, gameState.getRocket2(), Constants.WINDOW_WIDTH - 200, 90, true);
-            drawShieldBar(gl, gameState.getRocket2(), Constants.WINDOW_WIDTH - 200, 105);
-        }
-
-        // Level info
         drawSimpleText(gl, "LEVEL: " + gameState.getLevel(), Constants.WINDOW_WIDTH / 2 - 50, 30);
 
-        // Combo info
-        if (gameState.getCombo() > 1) {
-            drawSimpleText(gl, "COMBO x" + gameState.getCombo(), Constants.WINDOW_WIDTH / 2 - 50, 60);
+        drawSimpleText(gl, "P1: " + gameState.getUsername(), 10, 110);
+
+        for (int i = 0; i < gameState.getLives(); i++) drawHeart(gl, 150 + i * 25, 50);
+        drawHealthBar(gl, gameState.getRocket());
+
+        drawShieldBar(gl, gameState.getRocket());
+
+        if (gameState.getRocket2() != null) {
+            float p2X = Constants.WINDOW_WIDTH - 220;
+            drawSimpleText(gl, "SCORE: " + gameState.getScorePlayer2(), p2X, 30);
+            drawSimpleText(gl, "LIVES: " + gameState.getLivesPlayer2(), p2X, 60);
+            drawSimpleText(gl, "P2: " + gameState.getUsername2(), p2X, 110);
+            drawHealthBar(gl, gameState.getRocket2(), p2X, 80);
+            for (int i = 0; i < gameState.getLivesPlayer2(); i++) drawHeart2(gl, p2X+120 + i * 25, 50);
+        }
+        if (!gameState.isGameOver()) {
+            gl.glDisable(GL.GL_TEXTURE_2D);
+            gl.glColor3f(0.3f, 0.3f, 0.3f);
+            gl.glBegin(GL.GL_QUADS);
+            gl.glVertex2f(PAUSE_BTN_X, PAUSE_BTN_Y);
+            gl.glVertex2f(PAUSE_BTN_X + PAUSE_BTN_SIZE, PAUSE_BTN_Y);
+            gl.glVertex2f(PAUSE_BTN_X + PAUSE_BTN_SIZE, PAUSE_BTN_Y + PAUSE_BTN_SIZE);
+            gl.glVertex2f(PAUSE_BTN_X, PAUSE_BTN_Y + PAUSE_BTN_SIZE);
+            gl.glEnd();
+
+            gl.glColor3f(1f, 1f, 1f);
+            gl.glLineWidth(3);
+            gl.glBegin(GL.GL_LINES);
+            gl.glVertex2f(PAUSE_BTN_X + 13, PAUSE_BTN_Y + 10);
+            gl.glVertex2f(PAUSE_BTN_X + 13, PAUSE_BTN_Y + 30);
+            gl.glVertex2f(PAUSE_BTN_X + 27, PAUSE_BTN_Y + 10);
+            gl.glVertex2f(PAUSE_BTN_X + 27, PAUSE_BTN_Y + 30);
+            gl.glEnd();
+            gl.glEnable(GL.GL_TEXTURE_2D);
         }
     }
 
@@ -489,7 +327,6 @@ public class GameRenderer implements GLEventListener {
             starBrightness[i] = 0.5f + (float) (Math.random() * 0.5f);
         }
     }
-
     @Override
     public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
         GL gl = drawable.getGL();
@@ -501,7 +338,6 @@ public class GameRenderer implements GLEventListener {
         gl.glMatrixMode(GL.GL_MODELVIEW);
         gl.glLoadIdentity();
     }
-
     @Override
     public void displayChanged(GLAutoDrawable drawable, boolean modeChanged, boolean deviceChanged) {}
 }

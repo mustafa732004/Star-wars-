@@ -11,10 +11,11 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
 
     private final Set<Integer> pressedKeys = new HashSet<>();
     private int mouseX, mouseY;
-    private boolean mousePressed = false;
 
     private GameEngine gameEngine;
-    public RocketGame mainGame; // جعلناها public للوصول من GameEngine
+    private RocketGame mainGame;
+
+    private boolean mousePressed = false;
 
     public InputHandler(GameEngine engine, RocketGame game) {
         this.gameEngine = engine;
@@ -44,7 +45,6 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
     public boolean isRightPressed() { return isKeyPressed(KeyEvent.VK_RIGHT); }
     public boolean isSpacePressed() { return isKeyPressed(KeyEvent.VK_SPACE); }
 
-    // Player 2 controls
     public boolean isWPressed() { return isKeyPressed(KeyEvent.VK_W); }
     public boolean isSPressed() { return isKeyPressed(KeyEvent.VK_S); }
     public boolean isAPressed() { return isKeyPressed(KeyEvent.VK_A); }
@@ -52,105 +52,39 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
 
     @Override
     public void mouseClicked(MouseEvent e) {
+        if (gameEngine == null) return;
         int mx = e.getX();
         int my = e.getY();
 
-        System.out.println("Mouse clicked at: " + mx + ", " + my);
-        System.out.println("GameEngine null? " + (gameEngine == null));
-
-        // 1. تحقق أولاً من حالة نهاية المستوى الثالث
-        if (gameEngine != null && gameEngine.isLevelThreeComplete()) {
-            System.out.println("Handling level 3 menu click");
-            handleLevelThreeMenuMouseClick(e);
+        if (gameEngine.getGameState().isGameOver()) {
+            if (mx >= GameRenderer.RESTART_BTN_X && mx <= GameRenderer.RESTART_BTN_X + GameRenderer.BUTTON_WIDTH &&
+                    my >= GameRenderer.RESTART_BTN_Y && my <= GameRenderer.RESTART_BTN_Y + GameRenderer.BUTTON_HEIGHT) {
+                gameEngine.resetGame();
+            }
+            if (mx >= GameRenderer.MENU_BTN_X && mx <= GameRenderer.MENU_BTN_X + GameRenderer.BUTTON_WIDTH &&
+                    my >= GameRenderer.MENU_BTN_Y && my <= GameRenderer.MENU_BTN_Y + GameRenderer.BUTTON_HEIGHT) {
+                System.exit(0);
+            }
             return;
         }
 
-        // 2. ثم تحقق من حالة Game Over العادية
-        if (gameEngine != null && gameEngine.getGameState().isGameOver()) {
-            System.out.println("Handling regular game over click");
-            handleGameOverMouseClick(e);
-            return;
-        }
-    }
-
-    // دالة للتعامل مع نقرات قائمة نهاية المستوى الثالث
-    private void handleLevelThreeMenuMouseClick(MouseEvent e) {
-        int mx = e.getX();
-        int my = e.getY();
-
-        System.out.println("Level 3 menu click at: " + mx + ", " + my);
-
-        // أبعاد الأزرار من GameRenderer
-        int buttonWidth = GameRenderer.BUTTON_WIDTH;
-        int buttonHeight = GameRenderer.BUTTON_HEIGHT;
-
-        // إحداثيات الأزرار
-        int playAgainX = GameRenderer.PLAY_AGAIN_BTN_X;
-        int playAgainY = GameRenderer.PLAY_AGAIN_BTN_Y;
-
-        int homeX = GameRenderer.HOME_BTN_X;
-        int homeY = GameRenderer.HOME_BTN_Y;
-
-        int exitX = GameRenderer.EXIT_BTN_X;
-        int exitY = GameRenderer.EXIT_BTN_Y;
-
-        // تحقق من النقر على زر Play Again
-        if (mx >= playAgainX && mx <= playAgainX + buttonWidth &&
-                my >= playAgainY && my <= playAgainY + buttonHeight) {
-            System.out.println("Play Again clicked via mouse");
-            // اختيار الزر الأول في القائمة
-            gameEngine.handleLevelThreeMenuSelection(0);
+        if (gameEngine.getGameState().isPaused()) {
+            if (mx >= GameRenderer.RESUME_BTN_X && mx <= GameRenderer.RESUME_BTN_X + GameRenderer.BUTTON_WIDTH &&
+                    my >= GameRenderer.RESUME_BTN_Y && my <= GameRenderer.RESUME_BTN_Y + GameRenderer.BUTTON_HEIGHT) {
+                gameEngine.getGameState().setPaused(false);
+            }
+            if (mx >= GameRenderer.MENU_BTN_X && mx <= GameRenderer.MENU_BTN_X + GameRenderer.BUTTON_WIDTH &&
+                    my >= GameRenderer.MENU_BTN_Y && my <= GameRenderer.MENU_BTN_Y + GameRenderer.BUTTON_HEIGHT) {
+                System.exit(0);
+            }
             return;
         }
 
-        // تحقق من النقر على زر Back to Home
-        if (mx >= homeX && mx <= homeX + buttonWidth &&
-                my >= homeY && my <= homeY + buttonHeight) {
-            System.out.println("Back to Home clicked via mouse");
-            // اختيار الزر الثاني في القائمة
-            gameEngine.handleLevelThreeMenuSelection(1);
-            return;
-        }
-
-        // تحقق من النقر على زر Exit Game
-        if (mx >= exitX && mx <= exitX + buttonWidth &&
-                my >= exitY && my <= exitY + buttonHeight) {
-            System.out.println("Exit Game clicked via mouse");
-            // اختيار الزر الثالث في القائمة
-            gameEngine.handleLevelThreeMenuSelection(2);
-            return;
-        }
-    }
-
-    // دالة للتعامل مع نقرات شاشة Game Over العادية
-    private void handleGameOverMouseClick(MouseEvent e) {
-        int mx = e.getX();
-        int my = e.getY();
-
-        // الأزرار القديمة من GameRenderer
-        int buttonWidth = GameRenderer.BUTTON_WIDTH;
-        int buttonHeight = GameRenderer.BUTTON_HEIGHT;
-
-        // إحداثيات الزر القديم Play Again (موجود في drawTwoButtons)
-        int restartX = GameRenderer.RESTART_BTN_X;
-        int restartY = GameRenderer.RESTART_BTN_Y;
-
-        // إحداثيات الزر القديم Exit Game
-        int exitX = GameRenderer.MENU_BTN_X;
-        int exitY = GameRenderer.MENU_BTN_Y;
-
-        // زر Play Again في Game Over العادي
-        if (mx >= restartX && mx <= restartX + buttonWidth &&
-                my >= restartY && my <= restartY + buttonHeight) {
-            System.out.println("Restart Clicked!");
-            gameEngine.resetGame();
-        }
-
-        // زر Exit في Game Over العادي
-        if (mx >= exitX && mx <= exitX + buttonWidth &&
-                my >= exitY && my <= exitY + buttonHeight) {
-            System.out.println("Exit Clicked!");
-            System.exit(0);
+        if (!gameEngine.getGameState().isGameOver()) {
+            if (mx >= GameRenderer.PAUSE_BTN_X && mx <= GameRenderer.PAUSE_BTN_X + GameRenderer.PAUSE_BTN_SIZE &&
+                    my >= GameRenderer.PAUSE_BTN_Y && my <= GameRenderer.PAUSE_BTN_Y + GameRenderer.PAUSE_BTN_SIZE) {
+                gameEngine.getGameState().setPaused(true);
+            }
         }
     }
 
@@ -158,15 +92,17 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
     public void mousePressed(MouseEvent e) {
         mousePressed = true;
     }
-
     @Override
     public void mouseReleased(MouseEvent e) {
         mousePressed = false;
     }
 
+    public boolean isMouseButtonPressed() {
+        return mousePressed;
+    }
+
     @Override
     public void mouseEntered(MouseEvent e) {}
-
     @Override
     public void mouseExited(MouseEvent e) {}
 
@@ -184,5 +120,4 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
 
     public int getMouseX() { return mouseX; }
     public int getMouseY() { return mouseY; }
-    public boolean isMouseButtonPressed() { return mousePressed; }
 }

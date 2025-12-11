@@ -21,7 +21,6 @@ public class Boss extends GameObject {
     private float targetY;
     private long phaseChangeTime;
 
-    // نسيج الكوكب للوحش
     private static Texture bossTexture;
     private static boolean textureLoaded = false;
 
@@ -32,13 +31,14 @@ public class Boss extends GameObject {
     public Boss(float x, float y) {
         super(x, y, 200, 200);
 
-        this.health = 100;
-        this.maxHealth = 100;
-        this.speed = 1.0f;
+        this.health = RocketGame.Util.Constants.BOSS_HEALTH;
+        this.maxHealth = RocketGame.Util.Constants.BOSS_HEALTH;
+
+        this.speed = 2.0f;
         this.phase = 1;
         this.direction = 1;
         this.lastShot = System.currentTimeMillis();
-        this.shootInterval = 1000;
+        this.shootInterval = 800;
         this.state = BossState.ENTERING;
         this.targetY = 50;
         this.phaseChangeTime = 0;
@@ -74,25 +74,37 @@ public class Boss extends GameObject {
                     state = BossState.ATTACKING;
                 }
                 break;
+
             case ATTACKING:
                 position.x += direction * speed * 2;
                 if (position.x <= 0) direction = 1;
                 else if (position.x >= 800 - width) direction = -1;
+
                 updatePhase();
                 break;
+
             case DAMAGED:
-                if (System.currentTimeMillis() - phaseChangeTime > 200) state = BossState.ATTACKING;
+                position.x += direction * speed * 2;
+                if (position.x <= 0) direction = 1;
+                else if (position.x >= 800 - width) direction = -1;
+
+                updatePhase();
+                if (System.currentTimeMillis() - phaseChangeTime > 200) {
+                    state = BossState.ATTACKING;
+                }
                 break;
-            case DEFEATED: break;
+
+            case DEFEATED:
+                break;
         }
     }
 
     private void updatePhase() {
         float healthPercent = (float) health / maxHealth;
-        if (healthPercent <= 0.33f && phase < 3) {
+        if (healthPercent <= 0.33f) {
             phase = 3;
             shootInterval = 500;
-        } else if (healthPercent <= 0.66f && phase < 2) {
+        } else if (healthPercent <= 0.66f) {
             phase = 2;
             shootInterval = 750;
         }
@@ -137,9 +149,9 @@ public class Boss extends GameObject {
         gl.glTranslatef(position.x, position.y, 0);
 
         if (state == BossState.DAMAGED && (System.currentTimeMillis() / 50) % 2 == 0) {
-            gl.glColor3f(1.0f, 0.5f, 0.5f); // أحمر فاتح
+            gl.glColor3f(1.0f, 0.5f, 0.5f);
         } else {
-            gl.glColor3f(1.0f, 1.0f, 1.0f); // لون طبيعي
+            gl.glColor3f(1.0f, 1.0f, 1.0f);
         }
 
         if (textureLoaded && bossTexture != null) {
@@ -198,7 +210,6 @@ public class Boss extends GameObject {
         gl.glEnd();
     }
 
-    // Getters
     public int getHealth() { return health; }
     public boolean isDefeated() { return state == BossState.DEFEATED; }
     public boolean isActive() {

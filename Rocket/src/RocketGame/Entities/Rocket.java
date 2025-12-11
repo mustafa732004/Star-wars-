@@ -24,6 +24,8 @@ public class Rocket extends GameObject {
     private Texture rocketTexture;
     private boolean textureLoaded;
 
+    private String texturePath = "Assets/s2.png";
+
     public Rocket(float x, float y) {
         super(x, y, Constants.ROCKET_WIDTH, Constants.ROCKET_HEIGHT);
 
@@ -40,11 +42,15 @@ public class Rocket extends GameObject {
 
         this.textureLoaded = false;
         this.rocketTexture = null;
+        this.texturePath = "Assets/rocket.png";
+    }
+    public Rocket(float x, float y, String textureName) {
+        this(x, y);
+        this.texturePath = textureName;
     }
 
     @Override
     public void update(float deltaTime) {
-        // لا شيء مطلوب هنا للصورة
     }
 
     public void move(float dx, float dy, int screenWidth, int screenHeight) {
@@ -83,7 +89,7 @@ public class Rocket extends GameObject {
         shield = Math.min(maxShield, shield + amount);
     }
 
-    public boolean isInvincible() {
+    public boolean isInvincible() {  // تم إصلاح الخطأ هنا - إضافة الدالة
         return System.currentTimeMillis() < invincibleUntil;
     }
 
@@ -95,7 +101,7 @@ public class Rocket extends GameObject {
         if (textureLoaded) return;
 
         try {
-            String texturePath = "Assets/rocket.png";
+//            String texturePath = "Assets/rocket.png";
             File textureFile = new File(texturePath);
 
             if (textureFile.exists()) {
@@ -159,7 +165,6 @@ public class Rocket extends GameObject {
             gl.glEnable(GL.GL_TEXTURE_2D);
             gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE);
 
-            // تأثير الوامض عندما يكون الصاروخ غير قابل للإصابة
             if (isInvincible() && (System.currentTimeMillis() / 100) % 2 == 0) {
                 gl.glColor3f(1.0f, 1.0f, 1.0f);
             } else {
@@ -185,41 +190,38 @@ public class Rocket extends GameObject {
             rocketTexture.disable();
             gl.glDisable(GL.GL_TEXTURE_2D);
         } else {
-            // النسخة الاحتياطية إذا لم يتم تحميل الصورة
             drawRocketBodyAsBackup(gl);
         }
     }
 
     private void drawRocketBodyAsBackup(GL gl) {
-        // هذه النسخة الاحتياطية لا تستخدم المستطيل بل شكل الصاروخ القديم
         if (isInvincible() && (System.currentTimeMillis() / 100) % 2 == 0) {
             gl.glColor3f(1.0f, 1.0f, 1.0f);
         } else {
             gl.glColor3f(1.0f, 0.3f, 0.3f);
         }
 
-        // جسم الصاروخ (مثلث)
+        gl.glBegin(GL.GL_QUADS);
+        gl.glVertex2f(10, 0);
+        gl.glVertex2f(30, 0);
+        gl.glVertex2f(30, 60);
+        gl.glVertex2f(10, 60);
+        gl.glEnd();
+
         gl.glBegin(GL.GL_TRIANGLES);
-        gl.glVertex2f(width / 2, 0); // قمة الصاروخ
-        gl.glVertex2f(0, height);    // الزاوية اليسرى السفلية
-        gl.glVertex2f(width, height); // الزاوية اليمنى السفلية
+        gl.glVertex2f(20, -10);
+        gl.glVertex2f(5, 0);
+        gl.glVertex2f(35, 0);
         gl.glEnd();
 
-        // قاعدة الصاروخ
-        gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(width * 0.3f, height);
-        gl.glVertex2f(width * 0.7f, height);
-        gl.glVertex2f(width * 0.6f, height * 1.2f);
-        gl.glVertex2f(width * 0.4f, height * 1.2f);
-        gl.glEnd();
-
-        // النوافذ/التفاصيل
         gl.glColor3f(0.3f, 0.3f, 1.0f);
-        gl.glBegin(GL.GL_QUADS);
-        gl.glVertex2f(width * 0.4f, height * 0.4f);
-        gl.glVertex2f(width * 0.6f, height * 0.4f);
-        gl.glVertex2f(width * 0.6f, height * 0.6f);
-        gl.glVertex2f(width * 0.4f, height * 0.6f);
+        gl.glBegin(GL.GL_TRIANGLES);
+        gl.glVertex2f(0, 40);
+        gl.glVertex2f(10, 30);
+        gl.glVertex2f(10, 50);
+        gl.glVertex2f(40, 40);
+        gl.glVertex2f(30, 30);
+        gl.glVertex2f(30, 50);
         gl.glEnd();
     }
 

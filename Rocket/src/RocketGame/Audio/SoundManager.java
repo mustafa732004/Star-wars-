@@ -25,6 +25,7 @@ public class SoundManager {
         return instance;
     }
 
+    // Load sound file
     public void loadSound(String name, String filepath) {
         try {
             File soundFile = new File(filepath);
@@ -38,6 +39,7 @@ public class SoundManager {
         }
     }
 
+    // Play sound
     public void playSound(String name) {
         if (muted) return;
 
@@ -48,6 +50,7 @@ public class SoundManager {
         }
     }
 
+    // Play procedural sound (simple beep)
     public void playTone(float frequency, int duration) {
         if (muted) return;
 
@@ -72,6 +75,7 @@ public class SoundManager {
         }).start();
     }
 
+    // Sound effects shortcuts
     public void playShoot() {
         playTone(800, 100);
     }
@@ -92,6 +96,7 @@ public class SoundManager {
         playTone(150, 300);
     }
 
+    // Controls
     public void toggleMute() {
         muted = !muted;
     }
@@ -108,6 +113,7 @@ public class SoundManager {
         this.volume = Math.max(0.0f, Math.min(1.0f, volume));
     }
 
+    // Cleanup
     public void cleanup() {
         for (Clip clip : soundClips.values()) {
             clip.close();

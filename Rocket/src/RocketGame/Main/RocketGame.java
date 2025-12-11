@@ -10,6 +10,7 @@ import RocketGame.Util.Constants;
 import com.sun.opengl.util.FPSAnimator;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -36,22 +37,16 @@ public class RocketGame extends JFrame {
         homeScreen = new Home(this);
 
         glCanvas.addGLEventListener(homeScreen);
-        glCanvas.addMouseListener(homeScreen);
+        glCanvas.addMouseListener((MouseListener) homeScreen);
 
         animator = new FPSAnimator(glCanvas, 60);
     }
 
-    // دالة الانتقال من القائمة إلى اللعبة مع بارامتر وضع اللاعبين
-    public void startGame(boolean twoPlayerMode) {
-        System.out.println("Starting game with twoPlayerMode: " + twoPlayerMode);
-
+    public void startGame(boolean isMultiplayer , boolean isAI , int level , String username , String username2) {
         glCanvas.removeGLEventListener(homeScreen);
         glCanvas.removeMouseListener(homeScreen);
 
-        gameEngine = new GameEngine(null);
-
-        // تهيئة GameState بوضع اللاعبين الصحيح
-        gameEngine.getGameState().initialize(false, twoPlayerMode);
+        gameEngine = new GameEngine(null , isMultiplayer , isAI , level , username , username2);
 
         inputHandler = new InputHandler(gameEngine, this);
 
@@ -65,69 +60,6 @@ public class RocketGame extends JFrame {
         glCanvas.addMouseMotionListener(inputHandler);
 
         glCanvas.requestFocusInWindow();
-    }
-
-    // نسخة إضافية من startGame تأخذ GameEngine موجود
-    public void startGame(boolean twoPlayerMode, GameEngine existingEngine) {
-        System.out.println("Starting game with existing engine");
-
-        glCanvas.removeGLEventListener(homeScreen);
-        glCanvas.removeMouseListener(homeScreen);
-
-        // استخدم GameEngine الموجود
-        gameEngine = existingEngine;
-
-        // تأكد من تهيئة GameState
-        if (gameEngine.getGameState() == null) {
-            gameEngine.getGameState().initialize(false, twoPlayerMode);
-        }
-
-        inputHandler = new InputHandler(gameEngine, this);
-        gameEngine.setInputHandler(inputHandler);
-
-        gameRenderer = new GameRenderer(gameEngine);
-
-        glCanvas.addGLEventListener(gameRenderer);
-        glCanvas.addKeyListener(inputHandler);
-        glCanvas.addMouseListener(inputHandler);
-        glCanvas.addMouseMotionListener(inputHandler);
-
-        glCanvas.requestFocusInWindow();
-    }
-
-    // دالة جديدة للعودة إلى القائمة الرئيسية
-    public void returnToMainMenu() {
-        System.out.println("Returning to Main Menu...");
-
-        // تنظيف اللعبة الحالية
-        if (gameRenderer != null) {
-            glCanvas.removeGLEventListener(gameRenderer);
-        }
-        if (inputHandler != null) {
-            glCanvas.removeKeyListener(inputHandler);
-            glCanvas.removeMouseListener(inputHandler);
-            glCanvas.removeMouseMotionListener(inputHandler);
-        }
-
-        // إعادة تعيين المراجع
-        gameEngine = null;
-        gameRenderer = null;
-        inputHandler = null;
-
-        // إعادة تهيئة الشاشة الرئيسية
-        if (homeScreen == null) {
-            homeScreen = new Home(this);
-        }
-
-        // إضافة مستمعي الأحداث للشاشة الرئيسية
-        glCanvas.addGLEventListener(homeScreen);
-        glCanvas.addMouseListener(homeScreen);
-
-        // طلب التركيز
-        glCanvas.requestFocusInWindow();
-
-        // إعادة الرسم
-        glCanvas.repaint();
     }
 
     private void configureWindow() {
@@ -144,17 +76,16 @@ public class RocketGame extends JFrame {
         setResizable(false);
         setVisible(true);
     }
-
     public void goToMenu() {
         if (gameEngine != null) {
+            gameEngine = null;
         }
         glCanvas.removeGLEventListener(gameRenderer);
         glCanvas.removeKeyListener(inputHandler);
         glCanvas.removeMouseListener(inputHandler);
+        glCanvas.removeMouseMotionListener(inputHandler);
 
-        if (homeScreen == null) {
-            homeScreen = new Home(this);
-        }
+        homeScreen = new Home(this);
 
         glCanvas.addGLEventListener(homeScreen);
         glCanvas.addMouseListener(homeScreen);

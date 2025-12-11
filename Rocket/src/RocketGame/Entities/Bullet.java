@@ -13,10 +13,19 @@ public class Bullet extends GameObject {
     private boolean fromEnemy;
     private String bulletType;
     private float[] color;
-    private int playerNumber; // إضافة هذا المتغير الجديد
 
     private static Texture planetBulletTexture;
     private static boolean textureLoaded = false;
+
+    private int playerNumber = 1;
+
+    public void setPlayerNumber(int playerNumber) {
+        this.playerNumber = playerNumber;
+    }
+
+    public int getPlayerNumber() {
+        return playerNumber;
+    }
 
     public Bullet(float x, float y, int damage, boolean isEnemyBullet, String type) {
         super(x, y, 30, 30);
@@ -25,7 +34,6 @@ public class Bullet extends GameObject {
         this.speed = Constants.BULLET_SPEED * 0.6f;
         this.fromEnemy = isEnemyBullet;
         this.bulletType = type;
-        this.playerNumber = 1; // القيمة الافتراضية
 
         if (bulletType.equals("planet")) {
             this.color = new float[]{1.0f, 1.0f, 1.0f};
@@ -44,7 +52,6 @@ public class Bullet extends GameObject {
         this.speed = Constants.BULLET_SPEED;
         this.fromEnemy = false;
         this.bulletType = bulletType;
-        this.playerNumber = 1; // القيمة الافتراضية
 
         // Laser settings
         if (bulletType.equals("laser")) {
@@ -62,9 +69,7 @@ public class Bullet extends GameObject {
         this(x, y, damage, isEnemyBullet, "normal");
         this.width = Constants.BULLET_WIDTH;
         this.height = Constants.BULLET_HEIGHT;
-        this.playerNumber = 1; // القيمة الافتراضية
     }
-
     public Bullet(float x, float y, int damage, float angle) {
         super(x, y, Constants.BULLET_WIDTH, Constants.BULLET_HEIGHT);
 
@@ -73,7 +78,6 @@ public class Bullet extends GameObject {
         this.fromEnemy = false;
         this.bulletType = "spread";
         this.color = new float[]{0.0f, 1.0f, 0.0f}; // Green
-        this.playerNumber = 1; // القيمة الافتراضية
 
         float radians = (float) Math.toRadians(angle);
         velocity.set((float) Math.sin(radians) * speed,
@@ -118,7 +122,6 @@ public class Bullet extends GameObject {
             planetBulletTexture.disable();
             gl.glDisable(GL.GL_TEXTURE_2D);
         } else {
-            // استخدام اللون المخزن في المتغير color
             gl.glColor3f(color[0], color[1], color[2]);
 
             if (bulletType.equals("laser")) {
@@ -138,69 +141,10 @@ public class Bullet extends GameObject {
     }
 
     public boolean isOffScreen(int sw, int sh) {
+        // إصلاح الخطأ السابق: استخدام position.y
         return position.y > sh || position.y < -height;
     }
 
-    // ==================== إضافة الدوال المفقودة ====================
-
-    // Getter و Setter لـ playerNumber
-    public int getPlayerNumber() {
-        return playerNumber;
-    }
-
-    public void setPlayerNumber(int playerNumber) {
-        this.playerNumber = playerNumber;
-    }
-
-    // Getter و Setter لـ color
-    public float[] getColor() {
-        return color;
-    }
-
-    public void setColor(float[] color) {
-        this.color = color;
-    }
-
-    // دالة مساعدة لتعيين لون بسهولة
-    public void setColor(float r, float g, float b) {
-        this.color = new float[]{r, g, b};
-    }
-
-    // Getter و Setter لـ bulletType
-    public String getBulletType() {
-        return bulletType;
-    }
-
-    public void setBulletType(String bulletType) {
-        this.bulletType = bulletType;
-    }
-
-    // Getter و Setter لـ damage
-    public int getDamage() {
-        return damage;
-    }
-
-    public void setDamage(int damage) {
-        this.damage = damage;
-    }
-
-    // Getter و Setter لـ speed
-    public float getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(float speed) {
-        this.speed = speed;
-    }
-
-    // Getter و Setter لـ fromEnemy
-    public boolean isFromEnemy() {
-        return fromEnemy;
-    }
-
-    public void setFromEnemy(boolean fromEnemy) {
-        this.fromEnemy = fromEnemy;
-    }
-
-    // ==================== نهاية الإضافات ====================
+    public int getDamage() { return damage; }
+    public boolean isFromEnemy() { return fromEnemy; }
 }

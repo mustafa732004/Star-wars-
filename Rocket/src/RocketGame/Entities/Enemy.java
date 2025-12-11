@@ -9,11 +9,10 @@ public class Enemy extends GameObject {
     private float speed;
     private EnemyType type;
     private long lastShot;
-    private int shootInterval; // milliseconds between shots
-    private float direction; // -1 = left, 1 = right
+    private int shootInterval;
+    private float direction;
     private float[] color;
 
-    // Enemy types
     public enum EnemyType {
         BASIC,      // Just moves down
         ZIGZAG,     // Moves side to side
@@ -30,7 +29,6 @@ public class Enemy extends GameObject {
         this.lastShot = System.currentTimeMillis();
         this.direction = Math.random() < 0.5 ? -1 : 1;
 
-        // Set properties based on type
         switch (type) {
             case BASIC:
                 this.health = 1;
@@ -65,35 +63,29 @@ public class Enemy extends GameObject {
 
     @Override
     public void update(float deltaTime) {
-        // Update position
         position.x += velocity.x * deltaTime;
         position.y += velocity.y * deltaTime;
 
-        // Type-specific behavior
         switch (type) {
             case ZIGZAG:
                 updateZigzagMovement();
                 break;
             case KAMIKAZE:
-                // Accelerate downward
                 velocity.y += 0.1f;
                 break;
         }
     }
 
-    // Zigzag movement pattern
     private void updateZigzagMovement() {
-        // Change direction at screen edges
         if (position.x <= 0) {
             direction = 1;
             velocity.x = direction * 2;
-        } else if (position.x >= 800 - width) { // Assuming 800 width screen
+        } else if (position.x >= 800 - width) {
             direction = -1;
             velocity.x = direction * 2;
         }
     }
 
-    // Check if enemy can shoot
     public boolean canShoot() {
         if (type != EnemyType.SHOOTER) {
             return false;
@@ -111,7 +103,6 @@ public class Enemy extends GameObject {
         gl.glPushMatrix();
         gl.glTranslatef(position.x, position.y, 0);
 
-        // Draw based on type
         switch (type) {
             case BASIC:
                 drawBasicEnemy(gl);
@@ -127,7 +118,6 @@ public class Enemy extends GameObject {
                 break;
         }
 
-        // Draw health bar if damaged
         if (health < maxHealth) {
             drawHealthBar(gl);
         }
@@ -135,18 +125,15 @@ public class Enemy extends GameObject {
         gl.glPopMatrix();
     }
 
-    // Draw basic enemy (triangle)
     private void drawBasicEnemy(GL gl) {
         gl.glColor3f(color[0], color[1], color[2]);
 
-        // Triangle pointing down
         gl.glBegin(GL.GL_TRIANGLES);
         gl.glVertex2f(width * 0.5f, height); // Bottom point
         gl.glVertex2f(0, 0);                  // Top left
         gl.glVertex2f(width, 0);              // Top right
         gl.glEnd();
 
-        // Eyes
         gl.glColor3f(1.0f, 0.0f, 0.0f);
         gl.glPointSize(4.0f);
         gl.glBegin(GL.GL_POINTS);
@@ -164,11 +151,9 @@ public class Enemy extends GameObject {
         gl.glEnd();
     }
 
-    // Draw zigzag enemy (diamond)
     private void drawZigzagEnemy(GL gl) {
         gl.glColor3f(color[0], color[1], color[2]);
 
-        // Diamond shape
         gl.glBegin(GL.GL_QUADS);
         gl.glVertex2f(width * 0.5f, 0);        // Top
         gl.glVertex2f(width, height * 0.5f);   // Right
@@ -176,7 +161,6 @@ public class Enemy extends GameObject {
         gl.glVertex2f(0, height * 0.5f);       // Left
         gl.glEnd();
 
-        // Center decoration
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glBegin(GL.GL_QUADS);
         gl.glVertex2f(width * 0.4f, height * 0.4f);
@@ -185,7 +169,6 @@ public class Enemy extends GameObject {
         gl.glVertex2f(width * 0.4f, height * 0.6f);
         gl.glEnd();
 
-        // Outline
         gl.glLineWidth(2.0f);
         gl.glBegin(GL.GL_LINE_LOOP);
         gl.glVertex2f(width * 0.5f, 0);
@@ -195,11 +178,9 @@ public class Enemy extends GameObject {
         gl.glEnd();
     }
 
-    // Draw shooter enemy (hexagon with turret)
     private void drawShooterEnemy(GL gl) {
         gl.glColor3f(color[0], color[1], color[2]);
 
-        // Hexagon body
         gl.glBegin(GL.GL_POLYGON);
         for (int i = 0; i < 6; i++) {
             double angle = Math.toRadians(i * 60);
@@ -209,7 +190,6 @@ public class Enemy extends GameObject {
         }
         gl.glEnd();
 
-        // Turret (gun)
         gl.glColor3f(0.2f, 0.2f, 0.2f);
         gl.glBegin(GL.GL_QUADS);
         gl.glVertex2f(width * 0.4f, height * 0.6f);
@@ -218,7 +198,6 @@ public class Enemy extends GameObject {
         gl.glVertex2f(width * 0.4f, height);
         gl.glEnd();
 
-        // Warning light
         long blink = System.currentTimeMillis() / 300;
         if (blink % 2 == 0) {
             gl.glColor3f(1.0f, 0.0f, 0.0f);
@@ -229,11 +208,9 @@ public class Enemy extends GameObject {
         }
     }
 
-    // Draw kamikaze enemy (skull-like)
     private void drawKamikazeEnemy(GL gl) {
         gl.glColor3f(color[0], color[1], color[2]);
 
-        // Main body (circle)
         gl.glBegin(GL.GL_TRIANGLE_FAN);
         gl.glVertex2f(width * 0.5f, height * 0.5f);
         for (int i = 0; i <= 360; i += 20) {
@@ -244,23 +221,19 @@ public class Enemy extends GameObject {
         }
         gl.glEnd();
 
-        // Angry eyes (X shape)
         gl.glColor3f(0.0f, 0.0f, 0.0f);
         gl.glLineWidth(3.0f);
-        // Left eye X
         gl.glBegin(GL.GL_LINES);
         gl.glVertex2f(width * 0.25f, height * 0.35f);
         gl.glVertex2f(width * 0.35f, height * 0.45f);
         gl.glVertex2f(width * 0.35f, height * 0.35f);
         gl.glVertex2f(width * 0.25f, height * 0.45f);
-        // Right eye X
         gl.glVertex2f(width * 0.65f, height * 0.35f);
         gl.glVertex2f(width * 0.75f, height * 0.45f);
         gl.glVertex2f(width * 0.75f, height * 0.35f);
         gl.glVertex2f(width * 0.65f, height * 0.45f);
         gl.glEnd();
 
-        // Mouth (angry)
         gl.glBegin(GL.GL_LINE_STRIP);
         gl.glVertex2f(width * 0.3f, height * 0.6f);
         gl.glVertex2f(width * 0.5f, height * 0.7f);
@@ -268,13 +241,11 @@ public class Enemy extends GameObject {
         gl.glEnd();
     }
 
-    // Draw health bar
     private void drawHealthBar(GL gl) {
         float barWidth = width;
         float barHeight = 4;
         float barY = -8;
 
-        // Background (red)
         gl.glColor3f(0.8f, 0.1f, 0.1f);
         gl.glBegin(GL.GL_QUADS);
         gl.glVertex2f(0, barY);
@@ -283,7 +254,6 @@ public class Enemy extends GameObject {
         gl.glVertex2f(0, barY + barHeight);
         gl.glEnd();
 
-        // Health (green)
         float healthWidth = barWidth * ((float) health / maxHealth);
         gl.glColor3f(0.1f, 0.8f, 0.1f);
         gl.glBegin(GL.GL_QUADS);
@@ -294,7 +264,6 @@ public class Enemy extends GameObject {
         gl.glEnd();
     }
 
-    // Take damage
     public void takeDamage(int amount) {
         health -= amount;
         if (health < 0) {
@@ -302,12 +271,10 @@ public class Enemy extends GameObject {
         }
     }
 
-    // Check if destroyed
     public boolean isDestroyed() {
         return health <= 0;
     }
 
-    // Getters
     public int getHealth() {
         return health;
     }

@@ -33,12 +33,10 @@ public class PowerUp extends GameObject {
         this.spawnTime = System.currentTimeMillis();
     }
 
-    // Constructor with random type
     public PowerUp(float x, float y) {
         this(x, y, getRandomType());
     }
 
-    // Get random powerup type
     private static PowerupType getRandomType() {
         PowerupType[] types = PowerupType.values();
         return types[(int) (Math.random() * types.length)];
@@ -46,16 +44,13 @@ public class PowerUp extends GameObject {
 
     @Override
     public void update(float deltaTime) {
-        // Move downward
         position.y += velocity.y * deltaTime;
 
-        // Rotate continuously
         rotation += 3.0f * deltaTime;
         if (rotation >= 360) {
             rotation -= 360;
         }
 
-        // Pulse effect (breathing animation)
         long time = System.currentTimeMillis() - spawnTime;
         pulse = 1.0f + (float) Math.sin(time / 200.0) * 0.2f;
     }
@@ -64,16 +59,14 @@ public class PowerUp extends GameObject {
     public void render(GL gl) {
         gl.glPushMatrix();
 
-        // Move to center of powerup
+        gl.glDisable(GL.GL_TEXTURE_2D);
+
         gl.glTranslatef(position.x + width / 2, position.y + height / 2, 0);
 
-        // Apply rotation
         gl.glRotatef(rotation, 0, 0, 1);
 
-        // Apply pulse scale
         gl.glScalef(pulse, pulse, 1.0f);
 
-        // Draw powerup based on type
         switch (type) {
             case HEALTH:
                 drawHealth(gl);
@@ -98,10 +91,11 @@ public class PowerUp extends GameObject {
                 break;
         }
 
+        gl.glEnable(GL.GL_TEXTURE_2D);
+
         gl.glPopMatrix();
     }
 
-    // Draw health powerup (red plus sign)
     private void drawHealth(GL gl) {
         // Red background
         gl.glColor3f(0.9f, 0.2f, 0.2f);
@@ -123,7 +117,6 @@ public class PowerUp extends GameObject {
         drawSquareOutline(gl, 15);
     }
 
-    // Draw shield powerup (blue hexagon)
     private void drawShield(GL gl) {
         // Blue background
         gl.glColor3f(0.2f, 0.6f, 1.0f);
@@ -139,7 +132,6 @@ public class PowerUp extends GameObject {
         drawHexagon(gl, 6);
     }
 
-    // Draw rapid fire powerup (yellow lightning)
     private void drawRapidFire(GL gl) {
         // Yellow background
         gl.glColor3f(1.0f, 0.9f, 0.2f);
@@ -158,7 +150,6 @@ public class PowerUp extends GameObject {
         drawSquareOutline(gl, 15);
     }
 
-    // Draw spread shot powerup (green arrows)
     private void drawSpread(GL gl) {
         // Green background
         gl.glColor3f(0.2f, 0.9f, 0.3f);
@@ -187,7 +178,6 @@ public class PowerUp extends GameObject {
         drawArrowTip(gl, 8, -8, 315);
     }
 
-    // Draw laser powerup (cyan beam)
     private void drawLaser(GL gl) {
         // Cyan background
         gl.glColor3f(0.0f, 0.9f, 0.9f);
@@ -208,7 +198,6 @@ public class PowerUp extends GameObject {
         drawSquareOutline(gl, 15);
     }
 
-    // Draw coin powerup (golden circle)
     private void drawCoin(GL gl) {
         // Gold circle
         gl.glColor3f(1.0f, 0.84f, 0.0f);
@@ -237,24 +226,17 @@ public class PowerUp extends GameObject {
         gl.glEnd();
     }
 
-    // Draw extra life powerup (pink heart)
     private void drawExtraLife(GL gl) {
-        // Pink/red heart
         gl.glColor3f(1.0f, 0.2f, 0.4f);
 
-        // Heart shape using triangles
         gl.glBegin(GL.GL_TRIANGLE_FAN);
-        // Center point at bottom
         gl.glVertex2f(0, -8);
-        // Left side up
         gl.glVertex2f(-8, 0);
         gl.glVertex2f(-8, 3);
         gl.glVertex2f(-6, 5);
         gl.glVertex2f(-4, 5);
         gl.glVertex2f(-2, 4);
-        // Top center
         gl.glVertex2f(0, 3);
-        // Right side
         gl.glVertex2f(2, 4);
         gl.glVertex2f(4, 5);
         gl.glVertex2f(6, 5);
@@ -262,7 +244,6 @@ public class PowerUp extends GameObject {
         gl.glVertex2f(8, 0);
         gl.glEnd();
 
-        // Shine highlight
         gl.glColor3f(1.0f, 0.8f, 0.9f);
         gl.glBegin(GL.GL_TRIANGLES);
         gl.glVertex2f(-4, 2);
@@ -271,7 +252,6 @@ public class PowerUp extends GameObject {
         gl.glEnd();
     }
 
-    // Helper: Draw filled square
     private void drawSquare(GL gl, float size) {
         gl.glBegin(GL.GL_QUADS);
         gl.glVertex2f(-size, -size);
@@ -281,7 +261,6 @@ public class PowerUp extends GameObject {
         gl.glEnd();
     }
 
-    // Helper: Draw square outline
     private void drawSquareOutline(GL gl, float size) {
         gl.glBegin(GL.GL_LINE_LOOP);
         gl.glVertex2f(-size, -size);
@@ -291,7 +270,6 @@ public class PowerUp extends GameObject {
         gl.glEnd();
     }
 
-    // Helper: Draw filled circle
     private void drawCircle(GL gl, float radius) {
         gl.glBegin(GL.GL_TRIANGLE_FAN);
         gl.glVertex2f(0, 0);
@@ -304,7 +282,6 @@ public class PowerUp extends GameObject {
         gl.glEnd();
     }
 
-    // Helper: Draw hexagon outline
     private void drawHexagon(GL gl, float radius) {
         gl.glBegin(GL.GL_LINE_LOOP);
         for (int i = 0; i < 6; i++) {
@@ -316,7 +293,6 @@ public class PowerUp extends GameObject {
         gl.glEnd();
     }
 
-    // Helper: Draw filled rectangle
     private void drawRect(GL gl, float x, float y, float w, float h) {
         gl.glBegin(GL.GL_QUADS);
         gl.glVertex2f(x, y);
@@ -326,7 +302,6 @@ public class PowerUp extends GameObject {
         gl.glEnd();
     }
 
-    // Helper: Draw arrow tip
     private void drawArrowTip(GL gl, float x, float y, float angle) {
         gl.glPushMatrix();
         gl.glTranslatef(x, y, 0);
@@ -341,7 +316,6 @@ public class PowerUp extends GameObject {
         gl.glPopMatrix();
     }
 
-    // Apply powerup effect to rocket
     public void applyToRocket(Rocket rocket) {
         switch (type) {
             case HEALTH:
@@ -362,17 +336,14 @@ public class PowerUp extends GameObject {
         }
     }
 
-    // Get score value for coin powerup
     public int getScoreValue() {
         return type == PowerupType.COIN ? 100 : 0;
     }
 
-    // Check if gives extra life
     public boolean givesExtraLife() {
         return type == PowerupType.EXTRA_LIFE;
     }
 
-    // Get duration for temporary powerups (in milliseconds)
     public int getDuration() {
         switch (type) {
             case RAPID_FIRE:
@@ -385,14 +356,12 @@ public class PowerUp extends GameObject {
         }
     }
 
-    // Check if this is a temporary powerup
     public boolean isTemporary() {
         return type == PowerupType.RAPID_FIRE ||
                 type == PowerupType.SPREAD ||
                 type == PowerupType.LASER;
     }
 
-    // Get powerup name for display
     public String getName() {
         switch (type) {
             case HEALTH:
@@ -414,7 +383,6 @@ public class PowerUp extends GameObject {
         }
     }
 
-    // Getters
     public PowerupType getType() {
         return type;
     }

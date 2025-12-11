@@ -18,6 +18,7 @@ public class CollisionManager {
     public void checkAllCollisions(GameState gameState) {
         Rocket rocket = gameState.getRocket();
         Rocket rocket2 = gameState.getRocket2();
+
         List<Bullet> bullets = gameState.getBullets();
         List<Enemy> enemies = gameState.getEnemies();
         List<Obstacle> obstacles = gameState.getObstacles();
@@ -25,13 +26,12 @@ public class CollisionManager {
         Boss boss = gameState.getBoss();
 
         checkBulletCollisions(bullets, enemies, obstacles, boss, gameState);
-
         checkRocketCollisions(rocket, enemies, obstacles, boss, gameState);
         checkPowerupCollisions(rocket, powerups, gameState);
 
         if (rocket2 != null) {
-            checkRocketCollisions(rocket2, enemies, obstacles, boss, gameState);
-            checkPowerupCollisions(rocket2, powerups, gameState);
+            checkRocketCollisions(rocket2, gameState.getEnemies(), gameState.getObstacles(), gameState.getBoss(), gameState);
+            checkPowerupCollisions(rocket2, gameState.getPowerups(), gameState);
         }
     }
 
@@ -56,7 +56,11 @@ public class CollisionManager {
                     if (enemy.isDestroyed()) {
                         particleSystem.createLargeExplosion(enemy.getX() + enemy.getWidth() / 2, enemy.getY() + enemy.getHeight() / 2, new float[]{1.0f, 0.5f, 0.0f});
                         soundManager.playExplosion();
-                        gameState.addScore(Constants.SCORE_ENEMY_DESTROY);
+                        if (bullet.getPlayerNumber() == 2) {
+                            gameState.addScorePlayer2(Constants.SCORE_ENEMY_DESTROY);
+                        } else {
+                            gameState.addScore(Constants.SCORE_ENEMY_DESTROY);
+                        }
                         gameState.incrementCombo();
                         enemies.remove(j);
                         if (Math.random() < 0.3) {
@@ -74,13 +78,22 @@ public class CollisionManager {
                 Obstacle obstacle = obstacles.get(j);
                 if (bullet.collidesWith(obstacle)) {
                     obstacle.takeDamage(bullet.getDamage());
-                    particleSystem.createHitEffect(bullet.getX(), bullet.getY(), new float[]{0.8f, 0.6f, 0.8f});
+                    float[] color = {0.8f, 0.6f, 0.8f};
+                    particleSystem.createHitEffect(bullet.getX(), bullet.getY(), color);
                     soundManager.playHit();
 
                     if (obstacle.isDestroyed()) {
-                        particleSystem.createLargeExplosion(obstacle.getX() + obstacle.getWidth() / 2, obstacle.getY() + obstacle.getHeight() / 2, obstacle.getColor());
+                        particleSystem.createLargeExplosion(
+                                obstacle.getX() + obstacle.getWidth() / 2,
+                                obstacle.getY() + obstacle.getHeight() / 2,
+                                obstacle.getColor()
+                        );
                         soundManager.playExplosion();
-                        gameState.addScore(Constants.SCORE_OBSTACLE_DESTROY);
+                        if (bullet.getPlayerNumber() == 2) {
+                            gameState.addScorePlayer2(Constants.SCORE_OBSTACLE_DESTROY);
+                        } else {
+                            gameState.addScore(Constants.SCORE_OBSTACLE_DESTROY);
+                        }
                         gameState.incrementCombo();
                         obstacles.remove(j);
                     }
@@ -98,13 +111,18 @@ public class CollisionManager {
                     soundManager.playHit();
 
                     if (boss.isDefeated()) {
-                        System.out.println("BOSS DEFEATED - TRIGGERING VICTORY");
+                        System.out.println("BOSS DEFEATED - TRIGGERING VICTORY"); // Debug print
 
                         particleSystem.createBossExplosion(boss.getX() + boss.getWidth() / 2, boss.getY() + boss.getHeight() / 2);
                         soundManager.playExplosion();
-                        gameState.addScore(Constants.SCORE_BOSS_DESTROY);
+                        if (bullet.getPlayerNumber() == 2) {
+                            gameState.addScorePlayer2(Constants.SCORE_BOSS_DESTROY);
+                        } else {
+                            gameState.addScore(Constants.SCORE_BOSS_DESTROY);
+                        }
 
                         gameState.setBoss(null);
+
                         gameState.setVictory(true);
                         gameState.setGameOver(true);
                     }
@@ -166,17 +184,16 @@ public class CollisionManager {
             } else if (rocket == gameState.getRocket2()) {
                 gameState.loseLifePlayer2();
             }
-
             particleSystem.createLargeExplosion(rocket.getX() + rocket.getWidth() / 2, rocket.getY() + rocket.getHeight() / 2, new float[]{1.0f, 0.0f, 0.0f});
             soundManager.playExplosion();
             gameState.resetCombo();
 
-            if (gameState.getLives() <= 0 && (!gameState.isTwoPlayerMode() || gameState.getLivesPlayer2() <= 0)) {
-                gameState.setGameOver(true);
-            } else {
-                rocket.setPosition(Constants.WINDOW_WIDTH / 2 - rocket.getWidth() / 2, Constants.WINDOW_HEIGHT - 100);
+            boolean p1Alive = (rocket == gameState.getRocket() && gameState.getLives() > 0);
+            boolean p2Alive = (rocket == gameState.getRocket2() && gameState.getLivesPlayer2() > 0);
+
+            if (p1Alive || p2Alive) {
                 rocket.heal(rocket.getMaxHealth());
-                rocket.setInvincible(2000);
+                rocket.setInvincible(3000);
             }
         }
     }
@@ -187,18 +204,9 @@ public class CollisionManager {
             if (rocket.collidesWith(powerup)) {
                 powerup.applyToRocket(rocket);
                 if (powerup.getType() == PowerUp.PowerupType.COIN) {
-                    // Add score to the player who collected it
-                    if (rocket == gameState.getRocket()) {
-                        gameState.addScore(powerup.getScoreValue());
-                    } else {
-                        gameState.addScorePlayer2(powerup.getScoreValue());
-                    }
+                    gameState.addScore(powerup.getScoreValue());
                 } else if (powerup.givesExtraLife()) {
-                    if (rocket == gameState.getRocket()) {
-                        gameState.addLife();
-                    } else {
-                        gameState.addLifePlayer2();
-                    }
+                    gameState.setLives(gameState.getLives() + 1);
                 }
                 float[] color = new float[]{0.0f, 1.0f, 0.0f};
                 particleSystem.createPowerupEffect(powerup.getX() + powerup.getWidth() / 2, powerup.getY() + powerup.getHeight() / 2, color);

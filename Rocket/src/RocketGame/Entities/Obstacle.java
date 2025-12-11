@@ -12,13 +12,11 @@ public class Obstacle extends GameObject {
     private int maxHealth;
     private float[] color;
     private ObstacleType type;
+    private float rotation;
 
     private static HashMap<String, Texture> planetTextures = new HashMap<>();
     private static boolean texturesLoaded = false;
     private Texture currentTexture;
-
-    // إضافة متغير لحفظ الصورة المختارة لكل عقبة
-    private String selectedPlanetName;
 
     public enum ObstacleType {
         ASTEROID,
@@ -60,15 +58,12 @@ public class Obstacle extends GameObject {
 
     @Override
     public void update(float deltaTime) {
-        // CRITICAL: Actually move the obstacle!
         position.x += velocity.x;
         position.y += velocity.y;
     }
 
-    // تحميل صور الكواكب
     private static void loadPlanetTextures() {
         try {
-            // تحميل 7 صور للكواكب
             String[] planetFiles = {
                     "planet6.png",
                     "planet1.png",
@@ -102,28 +97,21 @@ public class Obstacle extends GameObject {
         }
     }
 
-    // اختيار صورة كوكب عشوائية
     private void selectPlanetTexture() {
         if (planetTextures.isEmpty()) {
             currentTexture = null;
-            selectedPlanetName = null;
             return;
         }
 
-        // اختيار صورة عشوائية من بين الصور المحملة
         String[] keys = planetTextures.keySet().toArray(new String[0]);
         int randomIndex = (int) (Math.random() * keys.length);
-        selectedPlanetName = keys[randomIndex];
-        currentTexture = planetTextures.get(selectedPlanetName);
+        String selectedKey = keys[randomIndex];
+        currentTexture = planetTextures.get(selectedKey);
 
-        // تعيين لون بناءً على نوع الكوكب المختار
-        adjustColorByPlanet(selectedPlanetName);
+        adjustColorByPlanet(selectedKey);
     }
 
-    // تعديل اللون بناءً على صورة الكوكب المختارة
     private void adjustColorByPlanet(String planetName) {
-        if (planetName == null) return;
-
         switch (planetName) {
             case "planet6.png":
                 this.color = new float[]{0.8f, 0.8f, 0.9f}; // أزرق فاتح
@@ -153,65 +141,45 @@ public class Obstacle extends GameObject {
 
     @Override
     public void render(GL gl) {
-        // حفظ حالة المصفوفة الحالية
         gl.glPushMatrix();
-
-        // تطبيق التحويلات لهذه العقبة فقط
         gl.glTranslatef(position.x, position.y, 0);
 
-        // تفعيل خاصية الخلط للشفافية
-        gl.glEnable(GL.GL_BLEND);
-        gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-
-        // استخدام الصورة إذا كانت متوفرة
         if (currentTexture != null && texturesLoaded) {
             drawPlanetWithTexture(gl);
+            gl.glTranslatef(position.x + width/2, position.y + height/2, 0);
+            gl.glRotatef(rotation, 0, 0, 1);
+            gl.glTranslatef(-width/2, -height/2, 0);
         } else {
-            // رسم الشكل القديم كنسخة احتياطية
             drawBackupShape(gl);
         }
 
-        // تعطيل الخلط بعد الانتهاء
-        gl.glDisable(GL.GL_BLEND);
-
-        // رسم شريط الصحة إذا لزم الأمر
         if (health < maxHealth) {
             drawHealthBar(gl);
         }
 
-        // استعادة حالة المصفوفة السابقة
         gl.glPopMatrix();
-
-        // تنظيف حالة النسيج للتأكد من عدم تداخل النسيج مع الكائنات الأخرى
-        gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
     }
 
-    // رسم الكوكب باستخدام الصورة (الإصدار المصحح)
     private void drawPlanetWithTexture(GL gl) {
-        // تمكين النسيج
-        gl.glEnable(GL.GL_TEXTURE_2D);
-
-        // ربط النسيج الحالي
         currentTexture.bind();
+        currentTexture.enable();
 
-        // تعيين وضع النسيج
+        gl.glEnable(GL.GL_TEXTURE_2D);
         gl.glTexEnvi(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE);
 
-        // استخدام اللون المحدد للكوكب
         gl.glColor3f(color[0], color[1], color[2]);
 
         // رسم الكوكب كدائرة باستخدام النسيج
         drawTexturedCircle(gl, width / 2, height / 2, Math.min(width, height) / 2);
 
-        // تعطيل النسيج بعد الانتهاء
+        currentTexture.disable();
         gl.glDisable(GL.GL_TEXTURE_2D);
     }
 
-    // رسم دائرة مع نسيج
     private void drawTexturedCircle(GL gl, float cx, float cy, float radius) {
         int segments = 32;
         gl.glBegin(GL.GL_TRIANGLE_FAN);
-        gl.glTexCoord2f(0.5f, 0.5f); // مركز النسيج
+        gl.glTexCoord2f(0.5f, 0.5f);
         gl.glVertex2f(cx, cy);
 
         for (int i = 0; i <= segments; i++) {
@@ -228,7 +196,6 @@ public class Obstacle extends GameObject {
         gl.glEnd();
     }
 
-    // النسخة الاحتياطية إذا فشل تحميل الصور
     private void drawBackupShape(GL gl) {
         switch (type) {
             case ASTEROID:
@@ -243,7 +210,6 @@ public class Obstacle extends GameObject {
         }
     }
 
-    // الطرق القديمة للرسم (للنسخ الاحتياطي)
     private void drawAsteroid(GL gl) {
         gl.glColor3f(color[0], color[1], color[2]);
 
@@ -280,13 +246,11 @@ public class Obstacle extends GameObject {
         gl.glEnd();
     }
 
-    // دالة HealthBar
     private void drawHealthBar(GL gl) {
         float barWidth = width;
         float barHeight = 4;
         float barY = -8;
 
-        // الخلفية الحمراء
         gl.glColor3f(0.8f, 0.1f, 0.1f);
         gl.glBegin(GL.GL_QUADS);
         gl.glVertex2f(0, barY);
@@ -295,7 +259,6 @@ public class Obstacle extends GameObject {
         gl.glVertex2f(0, barY + barHeight);
         gl.glEnd();
 
-        // الجزء الأخضر (الصحة الحالية)
         float healthWidth = barWidth * ((float) health / maxHealth);
         gl.glColor3f(0.1f, 0.8f, 0.1f);
         gl.glBegin(GL.GL_QUADS);
@@ -305,7 +268,6 @@ public class Obstacle extends GameObject {
         gl.glVertex2f(0, barY + barHeight);
         gl.glEnd();
 
-        // الحدود البيضاء
         gl.glColor3f(1.0f, 1.0f, 1.0f);
         gl.glLineWidth(1.0f);
         gl.glBegin(GL.GL_LINE_LOOP);
@@ -348,11 +310,6 @@ public class Obstacle extends GameObject {
         return color;
     }
 
-    public String getSelectedPlanetName() {
-        return selectedPlanetName;
-    }
-
-    // دالة إضافية قد تكون مفيدة
     public boolean isOutOfBounds(int screenWidth, int screenHeight) {
         return position.y > screenHeight ||
                 position.x < -width ||

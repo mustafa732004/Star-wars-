@@ -24,14 +24,14 @@ public class Constants {
 
     // Scoring
     public static final int SCORE_OBSTACLE_DODGE = 5;
-    public static final int SCORE_OBSTACLE_DESTROY = 20;
-    public static final int SCORE_ENEMY_DESTROY = 20;
+    public static final int SCORE_OBSTACLE_DESTROY = 25;
+    public static final int SCORE_ENEMY_DESTROY = 25;
     public static final int SCORE_BOSS_DESTROY = 1500;
     public static final int SCORE_COIN = 5;
 
     // Boss
     public static final int BOSS_SPAWN_LEVEL = 3;
-    public static final int BOSS_HEALTH = 20;
+    public static final int BOSS_HEALTH = 500;
 
     // Colors (RGB 0-1)
     public static final float[] COLOR_ROCKET = {1.0f, 0.27f, 0.27f};
@@ -48,5 +48,4 @@ public class Constants {
     public static final int POWERUP_SIZE = 30;
 
 
-    public static final int ROCKET_DAMAGE = 10;
 }
